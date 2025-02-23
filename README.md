@@ -100,50 +100,99 @@ To create a user-friendly messaging app that prioritizes safety and privacy, emp
 
 ### Built With
 
-| Technology                                    | Purpose               | Version |
-| --------------------------------------------- | --------------------- | ------- |
-| [Expo](https://expo.dev/)                     | Development Framework | 52.0.37 |
-| [React Native](https://reactnative.dev/)      | Mobile Framework      | 0.76.7  |
-| [TypeScript](https://www.typescriptlang.org/) | Programming Language  | 5.3.3   |
-| [NativeWind](https://www.nativewind.dev/)     | Styling Solution      | 4.1.23  |
-| [Lucide Icons](https://lucide.dev/)           | Icon System           | 0.475.0 |
+| Technology                                                | Purpose              | Version |
+| --------------------------------------------------------- | -------------------- | ------- |
+| [Expo](https://expo.dev/)                                 | Development Platform | 50.0.0  |
+| [React Native](https://reactnative.dev/)                  | Mobile Framework     | 0.73.x  |
+| [TypeScript](https://www.typescriptlang.org/)             | Programming Language | 5.x     |
+| [NativeWind](https://www.nativewind.dev/)                 | Styling Solution     | 2.0.x   |
+| [React Native Paper](https://reactnativepaper.com/)       | UI Components        | 5.x     |
+| [Expo Router](https://docs.expo.dev/router/introduction/) | Navigation           | 3.x     |
+| [Lucide Icons](https://lucide.dev/)                       | Icon System          | Latest  |
 
 ### Tools and Technologies
 
-#### Frontend
+#### UI Components & Design
 
 ```typescript
-// Core UI Components
-import { NativeWind, Typography, Animations } from "@q-talk/ui";
-import { LucideIcons } from "@q-talk/icons";
+// Core UI Framework
+import { PaperProvider, useTheme } from "react-native-paper";
+import { styled } from "nativewind";
 
-// State Management & Navigation
-import { ContextAPI, ExpoRouter } from "@q-talk/core";
+// Navigation & Routing
+import { Slot, Stack, Tabs } from "expo-router";
+
+// Animations & Gestures
+import Animated, {
+  FadeInUp,
+  FadeOutDown,
+  SharedTransition,
+} from "react-native-reanimated";
+import { GestureDetector, Gesture } from "react-native-gesture-handler";
+
+// Icons & Visual Elements
+import { Icons } from "lucide-react-native";
 ```
 
-#### Security
+#### UI/UX Features
 
 ```typescript
-// Security Features
-import {
-  Encryption,
-  Authentication,
-  SecureStorage,
-  ScreenshotPrevention,
-} from "@q-talk/security";
+// Theme & Styling
+const theme = {
+  colors: {
+    primary: "#4F6F52",
+    secondary: "#739072",
+    background: "#D2E3C8",
+  },
+  typography: {
+    fontFamily: "Poppins",
+  },
+};
+
+// Interactive Components
+const components = {
+  buttons: {
+    primary: styled(Pressable, "bg-primary px-4 py-2 rounded-lg"),
+    secondary: styled(Pressable, "bg-secondary/10 px-4 py-2 rounded-lg"),
+  },
+  inputs: {
+    text: styled(TextInput, "border border-gray-200 rounded-lg px-4 py-2"),
+    search: styled(TextInput, "bg-gray-50 rounded-full px-6 py-3"),
+  },
+};
+
+// Animations & Transitions
+const animations = {
+  screen: SharedTransition.custom((values) => {
+    "worklet";
+    return {
+      opacity: values.progress,
+      transform: [{ scale: values.progress }],
+    };
+  }),
+  list: FadeInUp.delay(100),
+};
 ```
 
-#### Development Tools
+#### Development Environment
 
 ```typescript
-// Development Environment
+// Development Tools
 import {
-  VSCode,
-  Jest,
-  ESLint,
-  Prettier,
-  ExpoDevTools,
+  StoryBook, // UI Component Development
+  ReactDevTools, // Debugging & Inspection
+  Maestro, // E2E Testing
+  ESLint, // Code Quality
+  Prettier, // Code Formatting
 } from "@q-talk/dev-tools";
+
+// Design System Integration
+import {
+  Figma, // UI Design
+  ColorSystem, // Color Management
+  Typography, // Font System
+  Spacing, // Layout Grid
+} from "@q-talk/design-system";
 ```
 
 ## 📚 Documentation
