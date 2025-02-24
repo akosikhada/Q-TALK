@@ -1,41 +1,30 @@
 {
   "expo": {
-    "name": "Q-TALK",
-    "slug": "Q-TALK",
+    "name": "MessagingChatApp",
+    "slug": "MessagingChatApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logos/Q-TALK-LOGO-SIMPLE.png",
-    "scheme": "Q-TALK",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logos/Q-TALK-LOGO-SIMPLE.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
     },
     "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/logos/Q-TALK-LOGO-SIMPLE.png"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/logos/Q-TALK-LOGO-SIMPLE.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
-    "experiments": {
-      "typedRoutes": true
+      "favicon": "./assets/favicon.png"
     }
   }
 }
