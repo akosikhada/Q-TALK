@@ -1,3 +1,3 @@
 export default {
-  react_logo: require("@/src/assets/images/react-logo.png"),
+  q_talk_logo: require("@/src/assets/images/Q-TALK-LOGO-SIMPLE.png"),
 };
