@@ -43,9 +43,7 @@ const Auth = () => {
         ) : (
           <>
             <Text style={styles.from_text}>From</Text>
-            <Text style={styles.quantum_text}>
-              Q-Talk. All Rights Reserved.
-            </Text>
+            <Text style={styles.quantum_text}>Q-TALK</Text>
           </>
         )}
       </View>
@@ -64,14 +62,23 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(50),
   },
   header: {},
-  body: { alignItems: "center", gap: verticalScale(10) },
+  body: {
+    alignItems: "center",
+    gap: verticalScale(10),
+  },
   footer: {
     alignItems: "center",
     height: verticalScale(80),
     justifyContent: "flex-end",
   },
-  from_text: { fontSize: moderateScale(12), color: "#867373" },
-  quantum_text: { fontSize: moderateScale(15), color: "#000000" },
+  from_text: {
+    fontSize: moderateScale(12),
+    color: "#867373",
+  },
+  quantum_text: {
+    fontSize: moderateScale(15),
+    color: "#000000",
+  },
   logo_style: {
     width: moderateScale(70),
     height: moderateScale(70),
@@ -80,7 +87,7 @@ const styles = StyleSheet.create({
   q_talk_text: {
     fontSize: moderateScale(35),
     color: "#000000",
-    fontWeight: "900",
+    fontWeight: "bold",
   },
   loading_text: {
     fontSize: moderateScale(20),
