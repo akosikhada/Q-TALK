@@ -55,15 +55,10 @@ const Login = () => {
               style={{
                 gap: verticalScale(10),
                 flex: 1,
-                position: "relative",
-                bottom: verticalScale(9.5),
               }}
             >
               <TextInput
-                style={[
-                  styles.input,
-                  { position: "relative", top: verticalScale(10) },
-                ]}
+                style={styles.input}
                 placeholder="Enter your mobile number"
               />
               <View style={styles.horizontal_line} />
@@ -153,7 +148,7 @@ const styles = StyleSheet.create({
   input: {
     fontSize: moderateScale(16),
     color: "#000000",
-    fontWeight: "bold",
+    fontWeight: "500",
   },
   country_code: {
     gap: verticalScale(10),
