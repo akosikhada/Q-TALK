@@ -5,11 +5,13 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import ButtonComponent from "@/src/components/atoms/ButtonComponent";
 import { moderateScale, scale, verticalScale } from "react-native-size-matters";
 import OTPInput from "@codsod/react-native-otp-input";
+import { storage } from "@/src/utils/storage";
 
 const VerifyOTP = () => {
   const [otp, setOTP] = useState("");
   const onClickVerifyButton = () => {
     console.log(otp);
+    storage.set("access_token", "happy_anniversary_qcu");
   };
 
   return (
