@@ -51,6 +51,7 @@ const Main = () => {
                 styles.top_bar_buttons,
                 item == currentPage && { borderColor: "#ffffff" },
               ]}
+              activeOpacity={0.8}
             >
               <Text style={styles.top_bar_titles}>{item}</Text>
             </TouchableOpacity>
