@@ -4,35 +4,35 @@ import MessageCard from "./MessageCard";
 import ImagePath from "@/src/constants/ImagePath";
 
 const Chats = () => {
-  const messages_data_mock_up = [
+  const mockMessages = [
     {
-      profile_images: ImagePath.q_talk_logo,
-      users_name: "Mark Angelo Gulpe",
-      message_content: "Hello, World!",
-      message_time: "10:01 AM",
-      message_count: "1",
+      profileImage: ImagePath.qTalkLogo,
+      userName: "Mark Angelo Gulpe",
+      messageContent: "Hello, World!",
+      messageTime: "10:01 AM",
+      messageCount: "1",
     },
     {
-      profile_images: ImagePath.q_talk_logo,
-      users_name: "Miguel Enrique Dasalla",
-      message_content: "Hello, Motherfucker!",
-      message_time: "10:01 AM",
-      message_count: "2",
+      profileImage: ImagePath.qTalkLogo,
+      userName: "Miguel Enrique Dasalla",
+      messageContent: "Hello, Motherfucker!",
+      messageTime: "10:01 AM",
+      messageCount: "2",
     },
   ];
 
   return (
     <View style={{ flex: 1 }}>
       <FlatList
-        data={messages_data_mock_up}
+        data={mockMessages}
         renderItem={({ item }) => {
           return (
             <MessageCard
-              profile_images={item.profile_images}
-              users_name={item.users_name}
-              message_content={item.message_content}
-              message_time={item.message_time}
-              message_count={item.message_count}
+              profileImage={item?.profileImage}
+              userName={item?.userName}
+              messageContent={item?.messageContent}
+              messageTime={item?.messageTime}
+              messageCount={item?.messageCount}
             />
           );
         }}
