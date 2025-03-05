@@ -4,28 +4,38 @@ import ImagePath from "@/src/constants/ImagePath";
 import { moderateScale, scale, verticalScale } from "react-native-size-matters";
 
 const MessageCard = ({
-  profile_images,
-  users_name,
-  message_content,
-  message_time,
-  message_count,
+  profileImage,
+  userName,
+  messageContent,
+  messageTime,
+  messageCount,
+  LogoComponent,
+  IconComponent,
+  ArrowIconComponent,
 }: any) => {
   return (
-    <TouchableOpacity style={styles.message_card_container} activeOpacity={0.8}>
-      <View style={styles.left_container}>
-        <Image source={profile_images} style={styles.profile_images} />
+    <TouchableOpacity style={styles.messageCardContainer} activeOpacity={0.8}>
+      <View style={styles.leftContainer}>
         <View>
-          <Text style={styles.users_name}>{users_name}</Text>
-          <Text style={styles.message_content}>{message_content}</Text>
+          <Image source={profileImage} style={styles.profileImage} />
+          {LogoComponent}
+        </View>
+        <View>
+          <Text style={styles.userName}>{userName}</Text>
+          <View style={styles.messageContentContainer}>
+            {ArrowIconComponent}
+            <Text style={styles.messageContent}>{messageContent}</Text>
+          </View>
         </View>
       </View>
-      <View style={styles.right_container}>
-        <Text style={styles.message_time}>{message_time}</Text>
-        {!!message_count && (
-          <View style={styles.message_count_container}>
-            <Text style={styles.message_count}>{message_count}</Text>
+      <View style={styles.rightContainer}>
+        {messageTime && <Text style={styles.messageTime}>{messageTime}</Text>}
+        {!!messageCount && (
+          <View style={styles.messageCountContainer}>
+            <Text style={styles.messageCount}>{messageCount}</Text>
           </View>
         )}
+        {IconComponent}
       </View>
     </TouchableOpacity>
   );
@@ -34,33 +44,33 @@ const MessageCard = ({
 export default MessageCard;
 
 const styles = StyleSheet.create({
-  message_card_container: {
+  messageCardContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: scale(20),
     paddingVertical: verticalScale(15),
   },
-  profile_images: {
+  profileImage: {
     height: moderateScale(53),
     width: moderateScale(53),
     borderRadius: moderateScale(53),
   },
-  users_name: {
+  userName: {
     fontSize: moderateScale(14),
     color: "#000000",
     fontWeight: "bold",
   },
-  message_content: {
+  messageContent: {
     fontSize: moderateScale(13),
     color: "#889095",
     fontWeight: "500",
   },
-  message_time: {
+  messageTime: {
     color: "#998e8e",
     fontWeight: "bold",
   },
-  message_count_container: {
+  messageCountContainer: {
     backgroundColor: "#00a884",
     width: moderateScale(22),
     height: moderateScale(22),
@@ -68,18 +78,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  message_count: {
+  messageCount: {
     color: "#ffffff",
     fontWeight: "bold",
     fontSize: moderateScale(12),
   },
-  left_container: {
+  leftContainer: {
     flexDirection: "row",
     alignItems: "center",
     gap: scale(10),
   },
-  right_container: {
+  rightContainer: {
     alignItems: "flex-end",
     gap: verticalScale(7),
+  },
+  messageContentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: scale(7),
   },
 });
