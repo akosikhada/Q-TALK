@@ -91,6 +91,7 @@ Key functionalities include:
 
   - [React Native OTP Input](https://www.npmjs.com/package/@codsod/react-native-otp-input) - OTP verification
   - [React Native Country Picker](https://www.npmjs.com/package/react-native-country-picker-modal) - Country code selection
+  - [Clerk](https://clerk.dev/) - User authentication and management platform
 
 - **Database**
 
