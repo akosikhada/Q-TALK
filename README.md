@@ -68,7 +68,7 @@ Key functionalities include:
   - Works on iOS and Android devices
   - Consistent experience across platforms
 
-<!-- ## 🛠️ Technologies Used
+## 🛠️ Technologies Used
 
 - **Frontend Framework**
 
@@ -95,4 +95,3 @@ Key functionalities include:
 - **Database**
 
   - [Firebase](https://firebase.google.com/) - Real-time NoSQL database
--->
