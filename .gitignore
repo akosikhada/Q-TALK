@@ -1,4 +1,3 @@
-<<<<<<< flutter
 # Miscellaneous
 *.class
 *.log
@@ -83,4 +82,3 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
->>>>>>> production
