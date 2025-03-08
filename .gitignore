@@ -43,7 +43,7 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
-=======
+
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
 # dependencies
@@ -72,7 +72,6 @@ yarn-debug.*
 yarn-error.*
 
 # macOS
-.DS_Store
 *.pem
 
 # local env files
