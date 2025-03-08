@@ -1,7 +1,7 @@
 # 🔐 Q-TALK | Quantum Secure Messaging
 
 <p align="center">
-  <img src="./src/assets/images/Q-TALK-LOGO-SIMPLE.png" alt="Q-TALK Logo" width="200"/>
+  <img src="./lib/assets/logo_simple.png" alt="Q-Talk Logo" width="150"/>
   <br>
   <em>Communicate with confidence. Privacy by design.</em>
 </p>
