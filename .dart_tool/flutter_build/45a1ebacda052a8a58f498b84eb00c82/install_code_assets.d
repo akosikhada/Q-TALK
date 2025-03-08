@@ -1,0 +1,1 @@
+ C:\\Users\\Miguel\\Documents\\GitHub\\Q-TALK\\.dart_tool\\flutter_build\\45a1ebacda052a8a58f498b84eb00c82\\native_assets.json: 
