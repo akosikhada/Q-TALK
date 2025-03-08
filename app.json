@@ -4,38 +4,35 @@
     "slug": "Q-TALK",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./src/assets/images/Q-TALK-LOGO-SIMPLE.png",
-    "scheme": "Q-TALK-APP",
+    "icon": "./assets/images/SimpleLogo.png",
+    "scheme": "qTalkApp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/SimpleLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.QTALK"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./src/assets/images/Q-TALK-LOGO-SIMPLE.png",
+        "foregroundImage": "./assets/images/SimpleLogo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.QTALK"
     },
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./src/assets/images/Q-TALK-LOGO-SIMPLE.png"
+      "favicon": "./assets/images/SimpleLogo.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./src/assets/images/Q-TALK-LOGO-SIMPLE.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
-      ]
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsConfigPaths": true
     }
   }
 }
