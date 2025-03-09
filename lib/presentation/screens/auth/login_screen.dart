@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:q_talk/core/common/custom_button.dart';
 import 'package:q_talk/core/common/custom_text_field.dart';
 import 'package:q_talk/presentation/screens/auth/signup_screen.dart';
+import 'package:q_talk/presentation/screens/auth/chat.dart'; 
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -159,6 +160,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Validate form before proceeding
                     if (_formKey.currentState?.validate() ?? false) {
                       // TODO: Implement login logic
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InboxScreen(),
+                        ),
+                      );
                     }
                   },
                   text: "Login",

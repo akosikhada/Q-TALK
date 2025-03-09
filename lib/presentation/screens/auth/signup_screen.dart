@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:q_talk/core/common/custom_button.dart';
 import 'package:q_talk/core/common/custom_text_field.dart';
 import 'package:q_talk/presentation/screens/auth/login_screen.dart';
+import 'package:q_talk/presentation/screens/auth/verification.dart';
+
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -28,98 +30,15 @@ class _SignupScreenState extends State<SignupScreen> {
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
-  // Focus nodes
-  final _nameFocus = FocusNode();
-  final _usernameFocus = FocusNode();
-  final _emailFocus = FocusNode();
-  final _phoneFocus = FocusNode();
-  final _passwordFocus = FocusNode();
-  final _confirmPasswordFocus = FocusNode();
-
   @override
   void dispose() {
-    // Dispose controllers to prevent memory leaks
     emailController.dispose();
     nameController.dispose();
     usernameController.dispose();
     phoneController.dispose();
     passwordController.dispose();
     confirmPasswordController.dispose();
-
-    // Dispose focus nodes to prevent memory leaks
-    _nameFocus.dispose();
-    _usernameFocus.dispose();
-    _emailFocus.dispose();
-    _phoneFocus.dispose();
-    _passwordFocus.dispose();
-    _confirmPasswordFocus.dispose();
-
     super.dispose();
-  }
-
-  // Validation methods
-  String? _validateName(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your full name';
-    }
-    return null;
-  }
-
-  String? _validateUsername(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your username';
-    }
-    return null;
-  }
-
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your email address';
-    }
-
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    if (!emailRegex.hasMatch(value)) {
-      return 'Please enter a valid email address (e.g., example@email.com)';
-    }
-
-    return null;
-  }
-
-  String? _validatePassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter a password';
-    }
-
-    if (value.length < 6) {
-      return 'Password must be at least 6 characters long';
-    }
-
-    return null;
-  }
-
-  String? _validateConfirmPassword(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please confirm your password';
-    }
-
-    if (value != passwordController.text) {
-      return 'Passwords do not match';
-    }
-
-    return null;
-  }
-
-  String? _validatePhone(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Please enter your phone number';
-    }
-
-    final phoneRegex = RegExp(r'^\+?[\d\s-]{10,}$');
-    if (!phoneRegex.hasMatch(value)) {
-      return 'Please enter a valid phone number';
-    }
-
-    return null;
   }
 
   @override
@@ -148,7 +67,6 @@ class _SignupScreenState extends State<SignupScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 10),
 
                 // Subtitle
@@ -159,59 +77,44 @@ class _SignupScreenState extends State<SignupScreen> {
                   ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
                   textAlign: TextAlign.center,
                 ),
-
                 const SizedBox(height: 20),
 
                 // Full Name field
                 CustomTextField(
                   controller: nameController,
-                  focusNode: _nameFocus,
                   hintText: "Mark Angelo Pogi",
-                  validator: _validateName,
                   prefixIcon: const Icon(Icons.person_outlined),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Username field
                 CustomTextField(
                   controller: usernameController,
-                  focusNode: _usernameFocus,
                   hintText: "markpogi123",
-                  validator: _validateUsername,
                   prefixIcon: const Icon(Icons.alternate_email_outlined),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Email field
                 CustomTextField(
                   controller: emailController,
-                  focusNode: _emailFocus,
                   hintText: "mark.pogi.123@example.com",
-                  validator: _validateEmail,
                   prefixIcon: const Icon(Icons.email_outlined),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Phone field
                 CustomTextField(
                   controller: phoneController,
-                  focusNode: _phoneFocus,
                   hintText: "(+63) 000 0000 000",
-                  validator: _validatePhone,
                   prefixIcon: const Icon(Icons.phone_outlined),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Password field
                 CustomTextField(
                   controller: passwordController,
-                  focusNode: _passwordFocus,
                   hintText: "**********",
-                  validator: _validatePassword,
                   obscureText: !_isPasswordVisible,
                   prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
@@ -227,15 +130,12 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Confirm Password field
                 CustomTextField(
                   controller: confirmPasswordController,
-                  focusNode: _confirmPasswordFocus,
                   hintText: "**********",
-                  validator: _validateConfirmPassword,
                   obscureText: !_isConfirmPasswordVisible,
                   prefixIcon: const Icon(Icons.lock_outlined),
                   suffixIcon: IconButton(
@@ -251,21 +151,78 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 16),
 
                 // Create Account button
                 CustomButton(
                   onPressed: () {
-                    // Hide keyboard
                     FocusScope.of(context).unfocus();
-
-                    // Validate form before proceeding
                     if (_formKey.currentState?.validate() ?? false) {
-                      // TODO: Implement account creation logic
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const VerificationScreen(),
+                        ),
+                      );
                     }
                   },
                   text: "Create Account",
+                ),
+
+                const SizedBox(height: 16),
+
+                // Divider with text "or sign in with Google"
+                Row(
+                  children: [
+                    Expanded(
+                      child: Divider(color: Colors.grey[400], thickness: 1),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                      child: Text(
+                        "or sign in with",
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                    ),
+                    Expanded(
+                      child: Divider(color: Colors.grey[400], thickness: 1),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+
+                // Google Sign-In Button
+                OutlinedButton(
+                  onPressed: () {
+                    // TODO: Implement Google sign-in logic
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    side: const BorderSide(
+                      color: Colors.grey,
+                      width: 2,
+                    ), // Thicker border
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Image.asset('lib/assets/google.png', height: 24),
+                      const SizedBox(width: 10),
+                      const Text(
+                        "Sign in with Google",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
 
                 const SizedBox(height: 16),
