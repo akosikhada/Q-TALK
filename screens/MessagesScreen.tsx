@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { FlatList, ListRenderItemInfo, StyleSheet, Alert } from "react-native";
+import { FlatList, ListRenderItemInfo, StyleSheet } from "react-native";
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import {
   DarkModeSecondaryText,
 } from "../components/StyledComponents";
 import MessageActionModal from "../components/MessageActionModal";
+import { useAlert } from "../contexts/AlertContext";
 
 // Define the conversation type
 type Conversation = {
@@ -126,6 +127,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
     useState<Conversation | null>(null);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
+  const { showSuccessAlert, showInfoAlert, showConfirmAlert } = useAlert();
 
   const filteredConversations = conversations.filter((conversation) =>
     conversation.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -139,10 +141,11 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
   const handleArchive = () => {
     if (selectedConversation) {
       // In a real app, you would implement actual archiving logic
-      Alert.alert(
+      showSuccessAlert(
         "Archived",
         `Conversation with ${selectedConversation.name} has been archived.`
       );
+      setModalVisible(false);
     }
   };
 
@@ -157,12 +160,13 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       setConversations(updatedConversations);
 
       const isMuted = !selectedConversation.isMuted;
-      Alert.alert(
+      showInfoAlert(
         isMuted ? "Muted" : "Unmuted",
         `Notifications for ${selectedConversation.name} have been ${
           isMuted ? "muted" : "unmuted"
         }.`
       );
+      setModalVisible(false);
     }
   };
 
@@ -176,70 +180,58 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       );
       setConversations(updatedConversations);
 
-      Alert.alert(
+      showInfoAlert(
         "Marked as Unread",
         `Conversation with ${selectedConversation.name} has been marked as unread.`
       );
+      setModalVisible(false);
     }
   };
 
   const handleBlock = () => {
     if (selectedConversation) {
-      // In a real app, you would implement actual blocking logic
-      Alert.alert(
+      setModalVisible(false);
+
+      // Use confirm alert with callbacks
+      showConfirmAlert(
         "Block Contact",
         `Are you sure you want to block ${selectedConversation.name}?`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Block",
-            style: "destructive",
-            onPress: () => {
-              // Remove the conversation from the list
-              const updatedConversations = conversations.filter(
-                (conv) => conv.id !== selectedConversation.id
-              );
-              setConversations(updatedConversations);
-              Alert.alert(
-                "Blocked",
-                `${selectedConversation.name} has been blocked.`
-              );
-            },
-          },
-        ]
+        () => {
+          // Remove the conversation from the list
+          const updatedConversations = conversations.filter(
+            (conv) => conv.id !== selectedConversation.id
+          );
+          setConversations(updatedConversations);
+
+          showSuccessAlert(
+            "Blocked",
+            `${selectedConversation.name} has been blocked.`
+          );
+        }
       );
     }
   };
 
   const handleDelete = () => {
     if (selectedConversation) {
-      Alert.alert(
+      setModalVisible(false);
+
+      // Use confirm alert with callbacks
+      showConfirmAlert(
         "Delete Conversation",
         `Are you sure you want to delete your conversation with ${selectedConversation.name}?`,
-        [
-          {
-            text: "Cancel",
-            style: "cancel",
-          },
-          {
-            text: "Delete",
-            style: "destructive",
-            onPress: () => {
-              // Remove the conversation from the list
-              const updatedConversations = conversations.filter(
-                (conv) => conv.id !== selectedConversation.id
-              );
-              setConversations(updatedConversations);
-              Alert.alert(
-                "Deleted",
-                `Conversation with ${selectedConversation.name} has been deleted.`
-              );
-            },
-          },
-        ]
+        () => {
+          // Remove the conversation from the list
+          const updatedConversations = conversations.filter(
+            (conv) => conv.id !== selectedConversation.id
+          );
+          setConversations(updatedConversations);
+
+          showSuccessAlert(
+            "Deleted",
+            `Conversation with ${selectedConversation.name} has been deleted.`
+          );
+        }
       );
     }
   };
