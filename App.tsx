@@ -6,6 +6,7 @@ import { LogBox } from "react-native";
 import AppNavigator from "./navigation/AppNavigator";
 import AuthNavigator from "./navigation/AuthNavigator";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { AlertProvider } from "./contexts/AlertContext";
 
 // Ignore specific warnings that are related to third-party libraries
 LogBox.ignoreLogs([
@@ -27,16 +28,18 @@ export default function App() {
 
   return (
     <ThemeProvider>
-      <SafeAreaProvider>
-        <NavigationContainer>
-          <StatusBar style="auto" />
-          {isAuthenticated ? (
-            <AppNavigator onLogout={handleLogout} />
-          ) : (
-            <AuthNavigator onAuthenticated={handleAuthenticated} />
-          )}
-        </NavigationContainer>
-      </SafeAreaProvider>
+      <AlertProvider>
+        <SafeAreaProvider>
+          <NavigationContainer>
+            <StatusBar style="auto" />
+            {isAuthenticated ? (
+              <AppNavigator onLogout={handleLogout} />
+            ) : (
+              <AuthNavigator onAuthenticated={handleAuthenticated} />
+            )}
+          </NavigationContainer>
+        </SafeAreaProvider>
+      </AlertProvider>
     </ThemeProvider>
   );
 }

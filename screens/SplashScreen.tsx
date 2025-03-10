@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -13,7 +13,7 @@ import {
 } from "../components/StyledComponents";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
-import { Dimensions, Animated, StyleSheet } from "react-native";
+import { Dimensions, Animated, StyleSheet, BackHandler } from "react-native";
 import LottieView from "lottie-react-native";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -31,12 +31,76 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
   const screenHeight = Dimensions.get("window").height;
   const { isDarkMode } = useTheme();
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
 
   // Animation values
   const buttonScale = useRef(new Animated.Value(1)).current;
   const buttonOpacity = useRef(new Animated.Value(1)).current;
 
-  const handleGetStarted = () => {
+  // Reset animation state
+  const resetAnimationState = useCallback(() => {
+    setIsAnimating(false);
+    setIsNavigating(false);
+
+    // Reset animation values
+    buttonScale.setValue(1);
+    buttonOpacity.setValue(1);
+  }, [buttonScale, buttonOpacity]);
+
+  // Handle back button press
+  const handleBackPress = useCallback(() => {
+    if (isAnimating) {
+      // If animating, cancel the animation and return to normal state
+      resetAnimationState();
+      return true; // Prevent default back behavior
+    }
+    return false; // Allow default back behavior
+  }, [isAnimating, resetAnimationState]);
+
+  // Handle back button with useEffect
+  useEffect(() => {
+    // Add back button handler
+    const backHandlerSubscription = BackHandler.addEventListener(
+      "hardwareBackPress",
+      handleBackPress
+    );
+
+    // Clean up function
+    return () => {
+      backHandlerSubscription.remove();
+    };
+  }, [handleBackPress]);
+
+  // Reset animation state when component mounts or when navigation changes
+  useEffect(() => {
+    // Reset animation state when component mounts
+    if (!isNavigating) {
+      resetAnimationState();
+    }
+
+    // Add navigation focus listener
+    const unsubscribe = navigation?.addListener("focus", () => {
+      if (!isNavigating) {
+        resetAnimationState();
+      }
+    });
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [navigation, isNavigating, resetAnimationState]);
+
+  // Cancel button to stop the loading animation
+  const handleCancelLoading = useCallback(() => {
+    resetAnimationState();
+  }, [resetAnimationState]);
+
+  const handleGetStarted = useCallback(() => {
+    // Prevent multiple clicks
+    if (isAnimating) return;
+
     // Start button animation
     setIsAnimating(true);
 
@@ -61,10 +125,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
     ]).start(() => {
       // After animation completes, navigate to the next screen
       setTimeout(() => {
+        setIsNavigating(true);
         onGetStarted();
       }, 500);
     });
-  };
+  }, [buttonScale, buttonOpacity, onGetStarted, isAnimating]);
 
   const styles = StyleSheet.create({
     container: {
@@ -143,6 +208,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       width: ResponsiveSize.width(screenWidth * 0.5),
       height: ResponsiveSize.width(screenWidth * 0.5),
       borderRadius: 999,
+    },
+    cancelButton: {
+      marginTop: ResponsiveSize.padding(16),
+      padding: ResponsiveSize.padding(8),
+    },
+    cancelText: {
+      fontSize: ResponsiveSize.font(16),
+      fontWeight: "500",
     },
   });
 
@@ -229,6 +302,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
                 },
               ]}
             />
+
+            {/* Cancel button */}
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancelLoading}
+              activeOpacity={0.7}
+            >
+              <DarkModeText style={styles.cancelText}>Cancel</DarkModeText>
+            </TouchableOpacity>
           </View>
         )}
       </View>
