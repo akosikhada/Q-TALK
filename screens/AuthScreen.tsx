@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "../components/StyledComponents";
-import { Feather, MaterialIcons } from "@expo/vector-icons";
+import { Feather, MaterialIcons, AntDesign } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../contexts/ThemeContext";
 import {
@@ -20,6 +20,7 @@ import {
   ResponsiveSize,
 } from "../components/StyledComponents";
 import { StyleSheet } from "react-native";
+import { useAlert } from "../contexts/AlertContext";
 
 type AuthScreenProps = {
   onAuthenticate: (
@@ -48,6 +49,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
   >("");
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
+  const { showErrorAlert, showWarningAlert } = useAlert();
 
   // Password validation and strength calculation
   useEffect(() => {
@@ -110,36 +112,57 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
 
   const handleSubmit = () => {
     if (isSignUp) {
-      if (
-        !fullName ||
-        !email ||
-        !phoneNumber ||
-        !password ||
-        !confirmPassword
-      ) {
-        alert("Please fill in all required fields");
+      // Validation for sign up
+      if (!fullName.trim()) {
+        showErrorAlert("Missing Information", "Please enter your full name");
+        return;
+      }
+      if (!email.trim() && !phoneNumber.trim()) {
+        showErrorAlert(
+          "Missing Information",
+          "Please enter your email or phone number"
+        );
+        return;
+      }
+      if (password.length < 8) {
+        showWarningAlert(
+          "Weak Password",
+          "Password must be at least 8 characters long"
+        );
         return;
       }
       if (password !== confirmPassword) {
-        alert("Passwords do not match");
+        showErrorAlert("Password Mismatch", "Passwords do not match");
         return;
       }
       if (!acceptedTerms) {
-        alert("Please accept the terms of service");
+        showWarningAlert(
+          "Terms Required",
+          "Please accept the terms and conditions"
+        );
         return;
       }
       if (passwordStrength === "weak") {
-        alert("Please create a stronger password");
+        showWarningAlert(
+          "Weak Password",
+          "Please create a stronger password for better security"
+        );
         return;
       }
     } else {
-      if (!email || !password) {
-        alert("Please fill in all required fields");
+      // Validation for sign in
+      if (!email.trim()) {
+        showErrorAlert("Missing Information", "Please enter your email");
+        return;
+      }
+      if (!password.trim()) {
+        showErrorAlert("Missing Information", "Please enter your password");
         return;
       }
     }
 
-    onAuthenticate(email, password, isSignUp);
+    // Call the onAuthenticate function with the appropriate values
+    onAuthenticate(email || phoneNumber, password, isSignUp);
   };
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
@@ -157,6 +180,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
     setAcceptedTerms(false);
     setShowPassword(false);
     setShowConfirmPassword(false);
+  };
+
+  // Function to handle Google Sign-In UI button press
+  const handleGoogleButtonPress = () => {
+    // This is just a placeholder for UI demonstration
+    console.log("Google button pressed");
+    // The actual implementation would be handled by the backend team
   };
 
   return (
@@ -539,7 +569,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             paddingVertical: ResponsiveSize.padding(16),
             borderRadius: 100,
             alignItems: "center",
-            marginBottom: ResponsiveSize.padding(32),
+            marginBottom: ResponsiveSize.padding(16),
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
@@ -556,7 +586,74 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
               fontWeight: "600",
             }}
           >
-            Sign Up
+            Create Account
+          </Text>
+        </TouchableOpacity>
+
+        {/* OR Divider */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginVertical: ResponsiveSize.padding(16),
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              height: 1,
+              backgroundColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            }}
+          />
+          <DarkModeSecondaryText
+            style={{ marginHorizontal: ResponsiveSize.padding(10) }}
+          >
+            OR
+          </DarkModeSecondaryText>
+          <View
+            style={{
+              flex: 1,
+              height: 1,
+              backgroundColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            }}
+          />
+        </View>
+
+        {/* Continue with Google Button */}
+        <TouchableOpacity
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: isDarkMode ? "#2D3748" : "white",
+            paddingVertical: ResponsiveSize.padding(16),
+            borderRadius: 100,
+            marginBottom: ResponsiveSize.padding(32),
+            borderWidth: 1,
+            borderColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+          onPress={handleGoogleButtonPress}
+          activeOpacity={0.8}
+        >
+          <AntDesign
+            name="google"
+            size={ResponsiveSize.font(20)}
+            color="#DB4437"
+            style={{ marginRight: ResponsiveSize.padding(10) }}
+          />
+          <Text
+            style={{
+              color: isDarkMode ? "#FFFFFF" : "#212121",
+              fontSize: ResponsiveSize.font(16),
+              fontWeight: "600",
+            }}
+          >
+            Continue with Google
           </Text>
         </TouchableOpacity>
 
@@ -708,7 +805,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             paddingVertical: ResponsiveSize.padding(16),
             borderRadius: 100,
             alignItems: "center",
-            marginBottom: ResponsiveSize.padding(32),
+            marginBottom: ResponsiveSize.padding(16),
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
@@ -726,6 +823,73 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             }}
           >
             Sign In
+          </Text>
+        </TouchableOpacity>
+
+        {/* OR Divider */}
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            marginVertical: ResponsiveSize.padding(16),
+          }}
+        >
+          <View
+            style={{
+              flex: 1,
+              height: 1,
+              backgroundColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            }}
+          />
+          <DarkModeSecondaryText
+            style={{ marginHorizontal: ResponsiveSize.padding(10) }}
+          >
+            OR
+          </DarkModeSecondaryText>
+          <View
+            style={{
+              flex: 1,
+              height: 1,
+              backgroundColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            }}
+          />
+        </View>
+
+        {/* Continue with Google Button */}
+        <TouchableOpacity
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundColor: isDarkMode ? "#2D3748" : "white",
+            paddingVertical: ResponsiveSize.padding(16),
+            borderRadius: 100,
+            marginBottom: ResponsiveSize.padding(32),
+            borderWidth: 1,
+            borderColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+          onPress={handleGoogleButtonPress}
+          activeOpacity={0.8}
+        >
+          <AntDesign
+            name="google"
+            size={ResponsiveSize.font(20)}
+            color="#DB4437"
+            style={{ marginRight: ResponsiveSize.padding(10) }}
+          />
+          <Text
+            style={{
+              color: isDarkMode ? "#FFFFFF" : "#212121",
+              fontSize: ResponsiveSize.font(16),
+              fontWeight: "600",
+            }}
+          >
+            Continue with Google
           </Text>
         </TouchableOpacity>
 
