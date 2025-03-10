@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -24,6 +24,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import LottieView from "lottie-react-native";
+import { useAlert } from "../contexts/AlertContext";
 
 type OTPScreenProps = {
   phoneOrEmail: string;
@@ -46,6 +47,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
   const inputRefs = useRef<Array<TextInput | null>>([]);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
+  const { showWarningAlert } = useAlert();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
   const screenWidth = Dimensions.get("window").width;
@@ -65,29 +67,32 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
     return () => clearInterval(interval);
   }, [minutes, seconds]);
 
-  const handleOtpChange = (text: string, index: number) => {
-    if (text.length <= 1) {
-      const newOtp = [...otp];
-      newOtp[index] = text;
-      setOtp(newOtp);
+  const handleOtpChange = useCallback(
+    (text: string, index: number) => {
+      if (text.length <= 1) {
+        const newOtp = [...otp];
+        newOtp[index] = text;
+        setOtp(newOtp);
 
-      // Auto focus to next input
-      if (text.length === 1 && index < 5) {
-        inputRefs.current[index + 1]?.focus();
+        // Auto focus to next input
+        if (text.length === 1 && index < 5) {
+          inputRefs.current[index + 1]?.focus();
+        }
       }
-    }
-  };
+    },
+    [otp]
+  );
 
-  const handleKeyPress = (
-    e: NativeSyntheticEvent<TextInputKeyPressEventData>,
-    index: number
-  ) => {
-    if (e.nativeEvent.key === "Backspace" && index > 0 && otp[index] === "") {
-      inputRefs.current[index - 1]?.focus();
-    }
-  };
+  const handleKeyPress = useCallback(
+    (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
+      if (e.nativeEvent.key === "Backspace" && index > 0 && otp[index] === "") {
+        inputRefs.current[index - 1]?.focus();
+      }
+    },
+    [otp]
+  );
 
-  const animateVerification = () => {
+  const animateVerification = useCallback(() => {
     // Scale up animation
     Animated.sequence([
       // First scale up
@@ -105,11 +110,11 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
         useNativeDriver: true,
       }),
     ]).start();
-  };
+  }, [scaleAnim]);
 
-  const handleVerify = () => {
+  const handleVerify = useCallback(() => {
     const otpString = otp.join("");
-    if (otpString.length === 6) {
+    if (otpString.length === 6 && /^\d+$/.test(otpString)) {
       setIsVerifying(true);
 
       // Simulate verification process
@@ -133,21 +138,21 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
         }, 2000);
       }, 1500);
     } else {
-      alert("Please enter a valid 6-digit code");
+      showWarningAlert("Invalid Code", "Please enter a valid 6-digit code");
     }
-  };
+  }, [otp, animateVerification, opacityAnim, onVerify, showWarningAlert]);
 
-  const handleResend = () => {
+  const handleResend = useCallback(() => {
     onResendOTP();
     setMinutes(2);
     setSeconds(0);
-  };
+  }, [onResendOTP]);
 
-  const formatTime = (min: number, sec: number) => {
+  const formatTime = useCallback((min: number, sec: number) => {
     return `${min.toString().padStart(2, "0")}:${sec
       .toString()
       .padStart(2, "0")}`;
-  };
+  }, []);
 
   const styles = StyleSheet.create({
     container: {
