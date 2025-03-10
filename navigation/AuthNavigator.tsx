@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 
 import SplashScreen from "../screens/SplashScreen";
@@ -20,33 +20,40 @@ type AuthNavigatorProps = {
 const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthenticated }) => {
   const [phoneOrEmail, setPhoneOrEmail] = useState("");
 
-  const handleGetStarted = (navigation: any) => {
+  const handleGetStarted = useCallback((navigation: any) => {
     // Navigate to Auth screen
     navigation.navigate("Auth");
-  };
+  }, []);
 
-  const handleAuthenticate = (
-    phoneOrEmail: string,
-    password: string,
-    isSignUp: boolean,
-    navigation: any
-  ) => {
-    setPhoneOrEmail(phoneOrEmail);
-    // In a real app, you would make an API call here
-    // For now, we'll just navigate to OTP screen
-    navigation.navigate("OTP");
-  };
+  const handleAuthenticate = useCallback(
+    (
+      phoneOrEmail: string,
+      password: string,
+      isSignUp: boolean,
+      navigation: any
+    ) => {
+      setPhoneOrEmail(phoneOrEmail);
+      // In a real app, you would make an API call here
+      // For now, we'll just navigate to OTP screen
+      navigation.navigate("OTP", { phoneOrEmail });
+    },
+    []
+  );
 
-  const handleVerifyOTP = (otp: string) => {
-    // In a real app, you would verify the OTP with an API call
-    // For now, we'll just complete the authentication
-    onAuthenticated();
-  };
+  const handleVerifyOTP = useCallback(
+    (otp: string) => {
+      // In a real app, you would verify the OTP with an API call
+      // For now, we'll just complete the authentication
+      console.log("OTP verified:", otp);
+      onAuthenticated();
+    },
+    [onAuthenticated]
+  );
 
-  const handleResendOTP = () => {
+  const handleResendOTP = useCallback(() => {
     // In a real app, you would make an API call to resend the OTP
     console.log("Resending OTP...");
-  };
+  }, []);
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -74,7 +81,7 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthenticated }) => {
         {(props) => (
           <OTPScreen
             {...props}
-            phoneOrEmail={phoneOrEmail}
+            phoneOrEmail={props.route.params?.phoneOrEmail || phoneOrEmail}
             onVerify={handleVerifyOTP}
             onResendOTP={handleResendOTP}
           />
