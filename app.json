@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "q-talk",
+    "slug": "q-talk",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/SimpleLogo.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/SimpleLogo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/SimpleLogo.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/SimpleLogo.png"
+    }
+  }
+}
