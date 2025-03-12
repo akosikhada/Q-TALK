@@ -9,18 +9,16 @@ import {
   DarkModeText,
   DarkModeSecondaryText,
   ResponsiveSize,
-} from "../components/StyledComponents";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
-import { useTheme } from "../contexts/ThemeContext";
-import {
+  BottomNavBar,
   ProfilePhotoPrivacyModal,
   GroupAddPermissionModal,
   CallsPermissionModal,
   MessageRetentionModal,
   BlockedContactActionModal,
-} from "../components/modals";
-import BottomNavBar from "../components/BottomNavBar";
+} from "../components";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Feather } from "@expo/vector-icons";
+import { useTheme } from "../contexts/ThemeContext";
 
 type PrivacyScreenProps = {
   navigation?: any;
@@ -40,6 +38,7 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
   const [hideOnlineStatus, setHideOnlineStatus] = useState(false);
   const [hideTypingStatus, setHideTypingStatus] = useState(false);
   const [hideProfilePhoto, setHideProfilePhoto] = useState(false);
+  const [hideName, setHideName] = useState(false);
   const [showPhotoPrivacyModal, setShowPhotoPrivacyModal] = useState(false);
 
   // Additional privacy controls
@@ -67,6 +66,7 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
       setHideOnlineStatus(true);
       setHideTypingStatus(true);
       setHideProfilePhoto(true);
+      setHideName(true);
       setLastSeen(false);
       setReadReceipts(false);
     }
@@ -202,14 +202,16 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + ResponsiveSize.padding(20),
+          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
         }}
       >
         {/* Privacy Info */}
         <View style={styles.infoContainer}>
           <DarkModeText style={styles.infoText}>
             Control your privacy settings and manage how your data is used in
-            Q-TALK.
+            Q-TALK. Anonymous Mode enables all privacy features at once,
+            including hiding your online status, typing status, profile photo,
+            and name.
           </DarkModeText>
         </View>
 
@@ -255,10 +257,21 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             icon="image"
             iconColor={isDarkMode ? "#FFB74D" : "#FF9800"}
             title="Hide Profile Photo"
-            subtitle="Show placeholder instead of your photo"
+            subtitle="Show a default avatar instead of your photo"
             hasToggle={true}
             value={anonymousMode ? true : hideProfilePhoto}
             onPress={() => setHideProfilePhoto(!hideProfilePhoto)}
+            disabled={anonymousMode}
+          />
+
+          <SettingItem
+            icon="user"
+            iconColor={isDarkMode ? "#4FC3F7" : "#03A9F4"}
+            title="Hide Name"
+            subtitle="Display 'Anonymous' instead of your name to others"
+            hasToggle={true}
+            value={anonymousMode ? true : hideName}
+            onPress={() => setHideName(!hideName)}
             disabled={anonymousMode}
           />
         </View>
@@ -383,9 +396,9 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             value={
               messageRetention === "24h"
                 ? "24 Hours"
-                : messageRetention === "7days"
+                : messageRetention === "7d"
                 ? "7 Days"
-                : messageRetention === "30days"
+                : messageRetention === "30d"
                 ? "30 Days"
                 : "Forever"
             }
@@ -424,7 +437,9 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Blocked Accounts Section */}
-        <View style={styles.section}>
+        <View
+          style={[styles.section, { marginBottom: ResponsiveSize.padding(40) }]}
+        >
           <DarkModeSecondaryText style={styles.sectionTitle}>
             BLOCKED ACCOUNTS
           </DarkModeSecondaryText>
@@ -515,7 +530,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         visible={showBlockedContactModal}
         onClose={() => setShowBlockedContactModal(false)}
         contactName={selectedContact}
-        onUnblock={() => handleUnblockContact(selectedContactIndex)}
+        onUnblock={handleUnblockContact}
+        onDelete={handleDeleteContact}
         isDarkMode={isDarkMode}
       />
 
@@ -524,6 +540,9 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         activeTab="Settings"
         navigation={navigation}
         isDarkMode={isDarkMode}
+        badges={{
+          Messages: 5, // Example badge for unread messages
+        }}
       />
     </DarkModeWrapper>
   );
@@ -598,6 +617,7 @@ const styles = StyleSheet.create({
   },
   emptyStateContainer: {
     padding: ResponsiveSize.padding(16),
+    paddingVertical: ResponsiveSize.padding(24),
     alignItems: "center",
     justifyContent: "center",
   },
