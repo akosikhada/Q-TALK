@@ -79,7 +79,7 @@ const MessageRetentionModal: React.FC<MessageRetentionModalProps> = ({
       value: "forever",
       title: "Forever",
       description: "Messages never disappear",
-      icon: "infinity",
+      icon: "archive",
     },
   ];
 

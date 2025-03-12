@@ -17,6 +17,7 @@ import ChatScreen from "../screens/ChatScreen";
 import SettingsScreen from "../screens/SettingsScreen";
 import ContactsScreen from "../screens/ContactsScreen";
 import CallsScreen from "../screens/CallsScreen";
+import PrivacyScreen from "../screens/PrivacyScreen";
 
 // Mock data for contacts
 const MOCK_CONTACTS = [
@@ -35,6 +36,7 @@ export type MainStackParamList = {
   TabNavigator: undefined;
   Chat: { conversationId: string; contactName: string };
   NewMessage: undefined;
+  Privacy: undefined;
 };
 
 export type TabParamList = {
@@ -224,6 +226,8 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
       </MainStack.Screen>
 
       <MainStack.Screen name="NewMessage" component={NewMessageScreen} />
+
+      <MainStack.Screen name="Privacy" component={PrivacyScreen} />
     </MainStack.Navigator>
   );
 };

@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  ResponsiveSize,
 } from "../components/StyledComponents";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -16,8 +15,10 @@ import {
   DarkModeWrapper,
   DarkModeText,
   DarkModeSecondaryText,
-} from "../components/StyledComponents";
-import MessageActionModal from "../components/MessageActionModal";
+  ResponsiveSize,
+  BottomNavBar,
+  MessageActionModal,
+} from "../components";
 import { useAlert } from "../contexts/AlertContext";
 
 // Define the conversation type
@@ -492,86 +493,18 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       />
 
       {/* Bottom Navigation */}
-      <View
-        className={`absolute bottom-0 left-0 right-0 flex-row ${
-          isDarkMode
-            ? "bg-gray-900 border-gray-800"
-            : "bg-background-light border-gray-200"
-        } border-t pt-2 pb-1 px-2`}
-        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }}
-      >
-        <TouchableOpacity className="flex-1 items-center" activeOpacity={0.7}>
-          <Ionicons
-            name="chatbubble"
-            size={22}
-            color={isDarkMode ? "#25BE80" : "#1A8D60"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-primaryDark" : "text-primary"
-            } mt-1`}
-          >
-            Chats
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Calls")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="phone"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Calls
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Contacts")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="users"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Contacts
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Settings")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="settings"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Settings
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar
+        activeTab="Messages"
+        navigation={navigation}
+        isDarkMode={isDarkMode}
+        badges={{
+          Messages: conversations.reduce(
+            (total, conv) => total + conv.unread,
+            0
+          ),
+          Calls: 2, // Example badge for missed calls
+        }}
+      />
 
       {/* Message Action Modal */}
       {selectedConversation && (
