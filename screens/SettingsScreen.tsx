@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, Switch } from "react-native";
+import { ScrollView, Switch, StyleSheet } from "react-native";
 import {
   View,
   Text,
@@ -9,7 +9,9 @@ import {
   DarkModeWrapper,
   DarkModeText,
   DarkModeSecondaryText,
-} from "../components/StyledComponents";
+  ResponsiveSize,
+  BottomNavBar,
+} from "../components";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, MaterialIcons, Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
@@ -24,7 +26,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   navigation,
 }) => {
   const [notifications, setNotifications] = useState(true);
-  const [readReceipts, setReadReceipts] = useState(true);
   const { isDarkMode, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -46,28 +47,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     hasChevron?: boolean;
   }) => (
     <TouchableOpacity
-      className={`flex-row items-center py-4 px-4 border-b ${
-        isDarkMode ? "border-gray-700" : "border-gray-200"
-      }`}
+      style={[
+        styles.settingItem,
+        { borderBottomColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
+      ]}
       onPress={onPress}
       activeOpacity={hasToggle ? 1 : 0.7}
     >
       <View
-        className={`w-8 h-8 rounded-full ${
-          isDarkMode ? "bg-gray-800" : "bg-gray-100"
-        } items-center justify-center mr-3`}
+        style={[
+          styles.iconContainer,
+          { backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
+        ]}
       >
         <Feather
           name={icon as any}
-          size={18}
+          size={ResponsiveSize.font(18)}
           color={iconColor || (isDarkMode ? "#A0A0A0" : "#9AA5B4")}
         />
       </View>
-      <View className="flex-1">
-        <DarkModeText className="font-medium">{title}</DarkModeText>
+      <View style={styles.textContainer}>
+        <DarkModeText style={styles.title}>{title}</DarkModeText>
       </View>
       {typeof value === "string" && (
-        <DarkModeSecondaryText className="mr-2">{value}</DarkModeSecondaryText>
+        <DarkModeSecondaryText style={styles.valueText}>
+          {value}
+        </DarkModeSecondaryText>
       )}
       {hasToggle && (
         <Switch
@@ -83,7 +88,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {hasChevron && !hasToggle && (
         <Feather
           name="chevron-right"
-          size={20}
+          size={ResponsiveSize.font(20)}
           color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
         />
       )}
@@ -102,46 +107,48 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       {/* Header */}
       <View
-        className="bg-primary px-4 pb-3"
-        style={{ paddingTop: insets.top + 10 }}
+        style={[
+          styles.header,
+          {
+            backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60",
+            paddingTop: insets.top + ResponsiveSize.padding(10),
+          },
+        ]}
       >
-        <Text className="text-2xl font-bold text-text-light mb-4">
-          Settings
-        </Text>
+        <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
       <ScrollView
         contentContainerStyle={{
-          paddingBottom: insets.bottom + 80,
+          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
         }}
       >
         {/* Profile Section */}
         <TouchableOpacity
-          className={`flex-row items-center p-4 mb-4 ${
-            isDarkMode ? "bg-gray-900" : "bg-background-light"
-          }`}
+          style={[
+            styles.profileContainer,
+            { backgroundColor: isDarkMode ? "#1E293B" : "#F5F7FA" },
+          ]}
           activeOpacity={0.7}
         >
           <Image
             source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
-            className="w-16 h-16 rounded-full mr-4"
+            style={styles.profileImage}
           />
-          <View className="flex-1">
-            <DarkModeText className="text-lg font-semibold">
-              Michael Chen
-            </DarkModeText>
+          <View style={styles.profileInfo}>
+            <DarkModeText style={styles.profileName}>Michael Chen</DarkModeText>
             <DarkModeSecondaryText>Available</DarkModeSecondaryText>
           </View>
           <Feather
             name="edit-2"
-            size={20}
+            size={ResponsiveSize.font(20)}
             color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
           />
         </TouchableOpacity>
 
         {/* Account Settings */}
-        <View className="mb-4">
-          <DarkModeSecondaryText className="px-4 py-2 font-semibold text-xs uppercase">
+        <View style={styles.section}>
+          <DarkModeSecondaryText style={styles.sectionTitle}>
             Account
           </DarkModeSecondaryText>
           <SettingItem
@@ -154,7 +161,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             icon="shield"
             iconColor={isDarkMode ? "#64B5F6" : "#2196F3"}
             title="Privacy"
-            onPress={() => {}}
+            onPress={() => navigation?.navigate("Privacy")}
           />
           <SettingItem
             icon="bell"
@@ -164,19 +171,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             value={notifications}
             onPress={() => setNotifications(!notifications)}
           />
-          <SettingItem
-            icon="check-square"
-            iconColor={isDarkMode ? "#81C784" : "#4CAF50"}
-            title="Read Receipts"
-            hasToggle={true}
-            value={readReceipts}
-            onPress={() => setReadReceipts(!readReceipts)}
-          />
         </View>
 
         {/* Appearance Settings */}
-        <View className="mb-4">
-          <DarkModeSecondaryText className="px-4 py-2 font-semibold text-xs uppercase">
+        <View style={styles.section}>
+          <DarkModeSecondaryText style={styles.sectionTitle}>
             Appearance
           </DarkModeSecondaryText>
           <SettingItem
@@ -197,8 +196,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </View>
 
         {/* Help & About */}
-        <View className="mb-4">
-          <DarkModeSecondaryText className="px-4 py-2 font-semibold text-xs uppercase">
+        <View style={styles.section}>
+          <DarkModeSecondaryText style={styles.sectionTitle}>
             Help & About
           </DarkModeSecondaryText>
           <SettingItem
@@ -219,115 +218,125 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         {/* Logout Button */}
         <TouchableOpacity
-          className={`mx-4 my-6 py-3 rounded-full ${
-            isDarkMode ? "bg-gray-800" : "bg-gray-100"
-          }`}
+          style={[
+            styles.logoutButton,
+            { backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
+          ]}
           onPress={onLogout}
           activeOpacity={0.7}
         >
-          <View className="flex-row items-center justify-center">
+          <View style={styles.logoutContent}>
             <Feather
               name="log-out"
-              size={18}
+              size={ResponsiveSize.font(18)}
               color={isDarkMode ? "#FF5252" : "#E53935"}
-              className="mr-2"
+              style={styles.logoutIcon}
             />
-            <Text
-              className={
-                isDarkMode
-                  ? "text-red-dark font-semibold"
-                  : "text-red-500 font-semibold"
-              }
-            >
-              Log Out
-            </Text>
+            <DarkModeText style={styles.logoutText}>Logout</DarkModeText>
           </View>
         </TouchableOpacity>
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View
-        className={`absolute bottom-0 left-0 right-0 flex-row ${
-          isDarkMode
-            ? "bg-gray-900 border-gray-800"
-            : "bg-background-light border-gray-200"
-        } border-t pt-2 pb-1 px-2`}
-        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }}
-      >
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Messages")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="message-square"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Chats
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Calls")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="phone"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Calls
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-1 items-center"
-          onPress={() => navigateToTab("Contacts")}
-          activeOpacity={0.7}
-        >
-          <Feather
-            name="users"
-            size={22}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-text-dark-muted" : "text-text-muted"
-            } mt-1`}
-          >
-            Contacts
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity className="flex-1 items-center" activeOpacity={0.7}>
-          <Feather
-            name="settings"
-            size={22}
-            color={isDarkMode ? "#25BE80" : "#1A8D60"}
-          />
-          <Text
-            className={`text-xs ${
-              isDarkMode ? "text-primaryDark" : "text-primary"
-            } mt-1`}
-          >
-            Settings
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNavBar
+        activeTab="Settings"
+        navigation={navigation}
+        isDarkMode={isDarkMode}
+        badges={{
+          Messages: 5, // Example badge for unread messages
+          Settings: 1, // Example badge for settings notification
+        }}
+      />
     </DarkModeWrapper>
   );
 };
+
+const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: ResponsiveSize.padding(16),
+    paddingBottom: ResponsiveSize.padding(12),
+  },
+  headerTitle: {
+    fontSize: ResponsiveSize.font(24),
+    lineHeight: ResponsiveSize.font(32),
+    fontWeight: "700",
+    color: "#FFFFFF",
+    marginBottom: ResponsiveSize.padding(16),
+  },
+  profileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: ResponsiveSize.padding(16),
+    marginBottom: ResponsiveSize.padding(16),
+  },
+  profileImage: {
+    width: ResponsiveSize.width(64),
+    height: ResponsiveSize.width(64),
+    borderRadius: ResponsiveSize.width(32),
+    marginRight: ResponsiveSize.padding(16),
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  profileName: {
+    fontSize: ResponsiveSize.font(18),
+    fontWeight: "600",
+    marginBottom: ResponsiveSize.padding(4),
+  },
+  section: {
+    marginBottom: ResponsiveSize.padding(16),
+  },
+  sectionTitle: {
+    fontSize: ResponsiveSize.font(12),
+    fontWeight: "600",
+    paddingHorizontal: ResponsiveSize.padding(16),
+    paddingVertical: ResponsiveSize.padding(8),
+    textTransform: "uppercase",
+  },
+  settingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: ResponsiveSize.padding(12),
+    paddingHorizontal: ResponsiveSize.padding(16),
+    borderBottomWidth: 1,
+  },
+  iconContainer: {
+    width: ResponsiveSize.width(32),
+    height: ResponsiveSize.width(32),
+    borderRadius: ResponsiveSize.width(16),
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: ResponsiveSize.padding(12),
+  },
+  textContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: ResponsiveSize.font(16),
+    fontWeight: "500",
+  },
+  valueText: {
+    marginRight: ResponsiveSize.padding(8),
+    fontSize: ResponsiveSize.font(14),
+  },
+  logoutButton: {
+    marginHorizontal: ResponsiveSize.padding(16),
+    marginVertical: ResponsiveSize.padding(24),
+    paddingVertical: ResponsiveSize.padding(12),
+    borderRadius: ResponsiveSize.width(100),
+  },
+  logoutContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoutIcon: {
+    marginRight: ResponsiveSize.padding(8),
+  },
+  logoutText: {
+    fontWeight: "600",
+    fontSize: ResponsiveSize.font(16),
+  },
+});
 
 export default SettingsScreen;
