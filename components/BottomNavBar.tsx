@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ResponsiveSize } from "./StyledComponents";
 
 type TabItem = {
-  name: "Messages" | "Calls" | "Contacts" | "Settings";
+  name: "messages" | "calls" | "contacts" | "settings";
   label: string;
   icon: string;
   activeIcon?: string;
@@ -20,14 +20,14 @@ type TabItem = {
 };
 
 type BottomNavBarProps = {
-  activeTab: "Messages" | "Calls" | "Contacts" | "Settings";
+  activeTab: "messages" | "calls" | "contacts" | "settings";
   navigation: any;
   isDarkMode: boolean;
   badges?: {
-    Messages?: number;
-    Calls?: number;
-    Contacts?: number;
-    Settings?: number;
+    messages?: number;
+    calls?: number;
+    contacts?: number;
+    settings?: number;
   };
 };
 
@@ -39,10 +39,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const animatedValues = useRef({
-    Messages: new Animated.Value(activeTab === "Messages" ? 1 : 0),
-    Calls: new Animated.Value(activeTab === "Calls" ? 1 : 0),
-    Contacts: new Animated.Value(activeTab === "Contacts" ? 1 : 0),
-    Settings: new Animated.Value(activeTab === "Settings" ? 1 : 0),
+    messages: new Animated.Value(activeTab === "messages" ? 1 : 0),
+    calls: new Animated.Value(activeTab === "calls" ? 1 : 0),
+    contacts: new Animated.Value(activeTab === "contacts" ? 1 : 0),
+    settings: new Animated.Value(activeTab === "settings" ? 1 : 0),
   }).current;
 
   useEffect(() => {
@@ -65,10 +65,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
     if (navigation) {
       // For main tab screens
       if (
-        tabName === "Messages" ||
-        tabName === "Calls" ||
-        tabName === "Contacts" ||
-        tabName === "Settings"
+        tabName === "messages" ||
+        tabName === "calls" ||
+        tabName === "contacts" ||
+        tabName === "settings"
       ) {
         // Check if we have a parent navigator
         const rootNavigation = navigation.getParent() || navigation;
@@ -79,30 +79,30 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
 
   const tabs: TabItem[] = [
     {
-      name: "Messages",
+      name: "messages",
       label: "Chats",
       icon: "message-square",
       activeIcon: "chatbubble",
-      iconFamily: activeTab === "Messages" ? "Ionicons" : "Feather",
-      badge: badges.Messages,
+      iconFamily: activeTab === "messages" ? "Ionicons" : "Feather",
+      badge: badges.messages,
     },
     {
-      name: "Calls",
+      name: "calls",
       label: "Calls",
       icon: "phone",
-      badge: badges.Calls,
+      badge: badges.calls,
     },
     {
-      name: "Contacts",
+      name: "contacts",
       label: "Contacts",
       icon: "users",
-      badge: badges.Contacts,
+      badge: badges.contacts,
     },
     {
-      name: "Settings",
+      name: "settings",
       label: "Settings",
       icon: "settings",
-      badge: badges.Settings,
+      badge: badges.settings,
     },
   ];
 
