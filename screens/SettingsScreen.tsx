@@ -1,19 +1,20 @@
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
-import { ScrollView, Switch, StyleSheet } from "react-native";
+import { StyleSheet, ScrollView, Switch } from "react-native";
 import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   DarkModeWrapper,
   DarkModeText,
   DarkModeSecondaryText,
   ResponsiveSize,
-  BottomNavBar,
+  Avatar,
+  BottomNavigation,
+  SettingItem,
 } from "../components";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather, MaterialIcons, Ionicons } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
 type SettingsScreenProps = {
@@ -25,79 +26,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onLogout,
   navigation,
 }) => {
-  const [notifications, setNotifications] = useState(true);
   const { isDarkMode, toggleTheme } = useTheme();
   const insets = useSafeAreaInsets();
 
-  const SettingItem = ({
-    icon,
-    iconColor,
-    title,
-    value,
-    onPress,
-    hasToggle = false,
-    hasChevron = true,
-  }: {
-    icon: string;
-    iconColor?: string;
-    title: string;
-    value?: string | boolean;
-    onPress?: () => void;
-    hasToggle?: boolean;
-    hasChevron?: boolean;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.settingItem,
-        { borderBottomColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
-      ]}
-      onPress={onPress}
-      activeOpacity={hasToggle ? 1 : 0.7}
-    >
-      <View
-        style={[
-          styles.iconContainer,
-          { backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
-        ]}
-      >
-        <Feather
-          name={icon as any}
-          size={ResponsiveSize.font(18)}
-          color={iconColor || (isDarkMode ? "#A0A0A0" : "#9AA5B4")}
-        />
-      </View>
-      <View style={styles.textContainer}>
-        <DarkModeText style={styles.title}>{title}</DarkModeText>
-      </View>
-      {typeof value === "string" && (
-        <DarkModeSecondaryText style={styles.valueText}>
-          {value}
-        </DarkModeSecondaryText>
-      )}
-      {hasToggle && (
-        <Switch
-          value={value as boolean}
-          onValueChange={onPress as any}
-          trackColor={{
-            false: isDarkMode ? "#3D4A5C" : "#D8DEE6",
-            true: "#1A8D60",
-          }}
-          thumbColor={"#FFFFFF"}
-        />
-      )}
-      {hasChevron && !hasToggle && (
-        <Feather
-          name="chevron-right"
-          size={ResponsiveSize.font(20)}
-          color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-        />
-      )}
-    </TouchableOpacity>
-  );
-
   const navigateToTab = (tabName: string) => {
     if (navigation) {
-      navigation.navigate(tabName);
+      // Navigate to the tab screen using the parent navigator
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("TabNavigator", { screen: tabName });
+      }
+    }
+  };
+
+  const navigateToScreen = (screenName: string) => {
+    if (navigation) {
+      // Get the parent navigator to navigate outside the tab navigator
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate(screenName);
+      }
     }
   };
 
@@ -115,104 +63,125 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           },
         ]}
       >
-        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.headerTop}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
       </View>
 
       <ScrollView
+        style={styles.container}
         contentContainerStyle={{
           paddingBottom: insets.bottom + ResponsiveSize.padding(80),
         }}
+        showsVerticalScrollIndicator={false}
       >
         {/* Profile Section */}
         <TouchableOpacity
-          style={[
-            styles.profileContainer,
-            { backgroundColor: isDarkMode ? "#1E293B" : "#F5F7FA" },
-          ]}
+          style={styles.profileSection}
+          onPress={() => navigateToScreen("Profile")}
           activeOpacity={0.7}
         >
-          <Image
-            source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
-            style={styles.profileImage}
+          <Avatar
+            uri="https://randomuser.me/api/portraits/men/32.jpg"
+            name="John Doe"
+            size={60}
+            backgroundColor={isDarkMode ? "#3D4A5C" : "#E8E8E8"}
           />
           <View style={styles.profileInfo}>
-            <DarkModeText style={styles.profileName}>Michael Chen</DarkModeText>
-            <DarkModeSecondaryText>Available</DarkModeSecondaryText>
+            <DarkModeText style={styles.profileName}>John Doe</DarkModeText>
+            <DarkModeSecondaryText style={styles.profileStatus}>
+              Available
+            </DarkModeSecondaryText>
           </View>
           <Feather
-            name="edit-2"
+            name="chevron-right"
             size={ResponsiveSize.font(20)}
             color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
           />
         </TouchableOpacity>
 
-        {/* Account Settings */}
+        {/* Account Section */}
         <View style={styles.section}>
           <DarkModeSecondaryText style={styles.sectionTitle}>
             Account
           </DarkModeSecondaryText>
           <SettingItem
-            icon="user"
-            iconColor={isDarkMode ? "#25BE80" : "#1A8D60"}
-            title="Account"
-            onPress={() => {}}
+            icon="key"
+            title="Privacy"
+            onPress={() => navigateToScreen("Privacy")}
+            isDarkMode={isDarkMode}
           />
           <SettingItem
             icon="shield"
-            iconColor={isDarkMode ? "#64B5F6" : "#2196F3"}
-            title="Privacy"
-            onPress={() => navigation?.navigate("Privacy")}
+            title="Security"
+            onPress={() => navigateToScreen("Security")}
+            isDarkMode={isDarkMode}
           />
           <SettingItem
-            icon="bell"
-            iconColor={isDarkMode ? "#FFD54F" : "#FFC107"}
-            title="Notifications"
-            hasToggle={true}
-            value={notifications}
-            onPress={() => setNotifications(!notifications)}
+            icon="smartphone"
+            title="Linked Devices"
+            onPress={() => navigateToScreen("LinkedDevices")}
+            isDarkMode={isDarkMode}
           />
         </View>
 
-        {/* Appearance Settings */}
+        {/* Preferences Section */}
         <View style={styles.section}>
           <DarkModeSecondaryText style={styles.sectionTitle}>
-            Appearance
+            Preferences
           </DarkModeSecondaryText>
           <SettingItem
+            icon="message-square"
+            title="Chat Settings"
+            onPress={() => navigateToScreen("ChatSettings")}
+            isDarkMode={isDarkMode}
+          />
+          <SettingItem
+            icon="hard-drive"
+            title="Data and Storage"
+            onPress={() => navigateToScreen("DataStorage")}
+            isDarkMode={isDarkMode}
+          />
+          <SettingItem
+            icon="globe"
+            title="Language"
+            value="English"
+            onPress={() => navigateToScreen("Language")}
+            isDarkMode={isDarkMode}
+          />
+          <SettingItem
             icon="moon"
-            iconColor={isDarkMode ? "#A0A0A0" : "#5D6B7E"}
             title="Dark Mode"
             hasToggle={true}
             value={isDarkMode}
             onPress={toggleTheme}
-          />
-          <SettingItem
-            icon="type"
-            iconColor={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-            title="Chat Text Size"
-            value="Medium"
-            onPress={() => {}}
+            hasChevron={false}
+            isDarkMode={isDarkMode}
           />
         </View>
 
-        {/* Help & About */}
+        {/* Help Section */}
         <View style={styles.section}>
           <DarkModeSecondaryText style={styles.sectionTitle}>
-            Help & About
+            Help
           </DarkModeSecondaryText>
           <SettingItem
             icon="help-circle"
-            iconColor={isDarkMode ? "#64B5F6" : "#2196F3"}
             title="Help Center"
-            onPress={() => {}}
+            onPress={() => navigateToScreen("HelpCenter")}
+            isDarkMode={isDarkMode}
           />
           <SettingItem
             icon="info"
-            iconColor={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
             title="About"
-            value="v1.0.0"
-            hasChevron={false}
-            onPress={() => {}}
+            onPress={() => navigateToScreen("About")}
+            isDarkMode={isDarkMode}
+          />
+          <SettingItem
+            icon="file-text"
+            title="Terms and Privacy Policy"
+            onPress={() => navigateToScreen("Terms")}
+            isDarkMode={isDarkMode}
           />
         </View>
 
@@ -220,7 +189,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
         <TouchableOpacity
           style={[
             styles.logoutButton,
-            { backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
+            {
+              backgroundColor: isDarkMode ? "#2D3748" : "#F3F4F6",
+            },
           ]}
           onPress={onLogout}
           activeOpacity={0.7}
@@ -228,24 +199,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           <View style={styles.logoutContent}>
             <Feather
               name="log-out"
-              size={ResponsiveSize.font(18)}
-              color={isDarkMode ? "#FF5252" : "#E53935"}
+              size={ResponsiveSize.font(20)}
+              color={isDarkMode ? "#FF5252" : "#FF3B30"}
               style={styles.logoutIcon}
             />
-            <DarkModeText style={styles.logoutText}>Logout</DarkModeText>
+            <DarkModeText
+              style={[
+                styles.logoutText,
+                { color: isDarkMode ? "#FF5252" : "#FF3B30" },
+              ]}
+            >
+              Log out
+            </DarkModeText>
           </View>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Bottom Navigation */}
-      <BottomNavBar
-        activeTab="Settings"
-        navigation={navigation}
+      <BottomNavigation
+        activeTab="settings"
+        onTabPress={navigateToTab}
         isDarkMode={isDarkMode}
-        badges={{
-          Messages: 5, // Example badge for unread messages
-          Settings: 1, // Example badge for settings notification
-        }}
       />
     </DarkModeWrapper>
   );
@@ -255,36 +228,49 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: ResponsiveSize.padding(16),
     paddingBottom: ResponsiveSize.padding(12),
+    borderBottomLeftRadius: ResponsiveSize.width(20),
+    borderBottomRightRadius: ResponsiveSize.width(20),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: ResponsiveSize.padding(16),
   },
   headerTitle: {
     fontSize: ResponsiveSize.font(24),
     lineHeight: ResponsiveSize.font(32),
     fontWeight: "700",
     color: "#FFFFFF",
-    marginBottom: ResponsiveSize.padding(16),
   },
-  profileContainer: {
+  container: {
+    flex: 1,
+  },
+  profileSection: {
     flexDirection: "row",
     alignItems: "center",
     padding: ResponsiveSize.padding(16),
     marginBottom: ResponsiveSize.padding(16),
   },
-  profileImage: {
-    width: ResponsiveSize.width(64),
-    height: ResponsiveSize.width(64),
-    borderRadius: ResponsiveSize.width(32),
-    marginRight: ResponsiveSize.padding(16),
-  },
   profileInfo: {
     flex: 1,
+    marginLeft: ResponsiveSize.padding(16),
   },
   profileName: {
     fontSize: ResponsiveSize.font(18),
     fontWeight: "600",
     marginBottom: ResponsiveSize.padding(4),
   },
+  profileStatus: {
+    fontSize: ResponsiveSize.font(14),
+  },
   section: {
-    marginBottom: ResponsiveSize.padding(16),
+    marginBottom: ResponsiveSize.padding(24),
   },
   sectionTitle: {
     fontSize: ResponsiveSize.font(12),
@@ -293,49 +279,28 @@ const styles = StyleSheet.create({
     paddingVertical: ResponsiveSize.padding(8),
     textTransform: "uppercase",
   },
-  settingItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: ResponsiveSize.padding(12),
-    paddingHorizontal: ResponsiveSize.padding(16),
-    borderBottomWidth: 1,
-  },
-  iconContainer: {
-    width: ResponsiveSize.width(32),
-    height: ResponsiveSize.width(32),
-    borderRadius: ResponsiveSize.width(16),
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: ResponsiveSize.padding(12),
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: ResponsiveSize.font(16),
-    fontWeight: "500",
-  },
-  valueText: {
-    marginRight: ResponsiveSize.padding(8),
-    fontSize: ResponsiveSize.font(14),
-  },
   logoutButton: {
     marginHorizontal: ResponsiveSize.padding(16),
     marginVertical: ResponsiveSize.padding(24),
     paddingVertical: ResponsiveSize.padding(12),
     borderRadius: ResponsiveSize.width(100),
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoutContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    width: "100%",
+    paddingHorizontal: ResponsiveSize.padding(8),
   },
   logoutIcon: {
-    marginRight: ResponsiveSize.padding(8),
+    marginRight: ResponsiveSize.padding(12),
   },
   logoutText: {
     fontWeight: "600",
     fontSize: ResponsiveSize.font(16),
+    marginLeft: ResponsiveSize.padding(12),
   },
 });
 
