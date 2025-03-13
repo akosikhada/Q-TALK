@@ -114,7 +114,7 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
       style={[
         styles.settingItem,
         {
-          borderBottomColor: isDarkMode ? "#3D4A5C" : "#E5E7EB",
+          opacity: disabled ? 0.7 : 1,
         },
       ]}
       onPress={onPress}
@@ -169,6 +169,35 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const SectionCard = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
+    <View style={styles.sectionWrapper}>
+      <DarkModeSecondaryText style={styles.sectionTitle}>
+        {title}
+      </DarkModeSecondaryText>
+      <View
+        style={[
+          styles.sectionCard,
+          {
+            backgroundColor: isDarkMode ? "#1E293B" : "#FFFFFF",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: isDarkMode ? 0.2 : 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          },
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+
   return (
     <DarkModeWrapper>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
@@ -180,6 +209,13 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
           {
             paddingTop: insets.top + ResponsiveSize.padding(10),
             backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60",
+            borderBottomLeftRadius: ResponsiveSize.width(20),
+            borderBottomRightRadius: ResponsiveSize.width(20),
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 4,
           },
         ]}
       >
@@ -196,6 +232,19 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Privacy</Text>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => {}}
+              activeOpacity={0.7}
+            >
+              <Feather
+                name="help-circle"
+                size={ResponsiveSize.font(22)}
+                color="white"
+              />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -203,10 +252,19 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         style={styles.container}
         contentContainerStyle={{
           paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+          paddingTop: ResponsiveSize.padding(16),
         }}
+        showsVerticalScrollIndicator={false}
       >
         {/* Privacy Info */}
         <View style={styles.infoContainer}>
+          <View style={styles.infoIconContainer}>
+            <Feather
+              name="shield"
+              size={ResponsiveSize.font(24)}
+              color={isDarkMode ? "#25BE80" : "#1A8D60"}
+            />
+          </View>
           <DarkModeText style={styles.infoText}>
             Control your privacy settings and manage how your data is used in
             Q-TALK. Anonymous Mode enables all privacy features at once,
@@ -216,11 +274,7 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
         </View>
 
         {/* Anonymous Mode Section */}
-        <View style={styles.section}>
-          <DarkModeSecondaryText style={styles.sectionTitle}>
-            ANONYMOUS MODE
-          </DarkModeSecondaryText>
-
+        <SectionCard title="ANONYMOUS MODE">
           <SettingItem
             icon="eye-off"
             iconColor={isDarkMode ? "#FF9800" : "#F57C00"}
@@ -230,6 +284,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             value={anonymousMode}
             onPress={handleAnonymousModeToggle}
           />
+
+          <View style={styles.divider} />
 
           <SettingItem
             icon="wifi-off"
@@ -242,6 +298,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             disabled={anonymousMode}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="message-square"
             iconColor={isDarkMode ? "#4DB6AC" : "#009688"}
@@ -252,6 +310,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             onPress={() => setHideTypingStatus(!hideTypingStatus)}
             disabled={anonymousMode}
           />
+
+          <View style={styles.divider} />
 
           <SettingItem
             icon="image"
@@ -264,6 +324,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             disabled={anonymousMode}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="user"
             iconColor={isDarkMode ? "#4FC3F7" : "#03A9F4"}
@@ -274,14 +336,10 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             onPress={() => setHideName(!hideName)}
             disabled={anonymousMode}
           />
-        </View>
+        </SectionCard>
 
         {/* Privacy Controls Section */}
-        <View style={styles.section}>
-          <DarkModeSecondaryText style={styles.sectionTitle}>
-            PRIVACY CONTROLS
-          </DarkModeSecondaryText>
-
+        <SectionCard title="PRIVACY CONTROLS">
           <SettingItem
             icon="eye"
             iconColor={isDarkMode ? "#64B5F6" : "#2196F3"}
@@ -293,6 +351,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             disabled={anonymousMode}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="check-circle"
             iconColor={isDarkMode ? "#81C784" : "#4CAF50"}
@@ -303,6 +363,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             onPress={() => setReadReceipts(!readReceipts)}
             disabled={anonymousMode}
           />
+
+          <View style={styles.divider} />
 
           <SettingItem
             icon="image"
@@ -326,6 +388,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             disabled={anonymousMode}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="users"
             iconColor={isDarkMode ? "#9575CD" : "#673AB7"}
@@ -347,6 +411,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             }}
             disabled={anonymousMode}
           />
+
+          <View style={styles.divider} />
 
           <SettingItem
             icon="phone"
@@ -370,6 +436,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             disabled={anonymousMode}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="camera"
             iconColor={isDarkMode ? "#F06292" : "#E91E63"}
@@ -380,14 +448,10 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             onPress={() => setScreenshotNotification(!screenshotNotification)}
             disabled={anonymousMode}
           />
-        </View>
+        </SectionCard>
 
         {/* Data & Security Section */}
-        <View style={styles.section}>
-          <DarkModeSecondaryText style={styles.sectionTitle}>
-            DATA & SECURITY
-          </DarkModeSecondaryText>
-
+        <SectionCard title="DATA & SECURITY">
           <SettingItem
             icon="clock"
             iconColor={isDarkMode ? "#FF8A65" : "#FF5722"}
@@ -405,6 +469,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             onPress={() => setShowRetentionModal(true)}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="lock"
             iconColor={isDarkMode ? "#7986CB" : "#3F51B5"}
@@ -414,6 +480,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             value={twoFactorAuth}
             onPress={() => setTwoFactorAuth(!twoFactorAuth)}
           />
+
+          <View style={styles.divider} />
 
           <SettingItem
             icon="download"
@@ -425,6 +493,8 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
             }}
           />
 
+          <View style={styles.divider} />
+
           <SettingItem
             icon="trash-2"
             iconColor={isDarkMode ? "#EF5350" : "#F44336"}
@@ -434,63 +504,69 @@ const PrivacyScreen: React.FC<PrivacyScreenProps> = ({ navigation }) => {
               // This would typically open a confirmation dialog
             }}
           />
-        </View>
+        </SectionCard>
 
         {/* Blocked Accounts Section */}
-        <View
-          style={[styles.section, { marginBottom: ResponsiveSize.padding(40) }]}
-        >
-          <DarkModeSecondaryText style={styles.sectionTitle}>
-            BLOCKED ACCOUNTS
-          </DarkModeSecondaryText>
-
+        <SectionCard title="BLOCKED ACCOUNTS">
           {blockList.length > 0 ? (
-            blockList.map((contact, index) => (
-              <TouchableOpacity
-                key={index}
-                style={styles.settingItem}
-                onPress={() => {
-                  setSelectedContact(contact);
-                  setSelectedContactIndex(index);
-                  setShowBlockedContactModal(true);
-                }}
-                disabled={anonymousMode}
-              >
-                <View
-                  style={[
-                    styles.iconContainer,
-                    {
-                      backgroundColor: isDarkMode ? "#2D3748" : "#F3F4F6",
-                    },
-                  ]}
-                >
-                  <Feather
-                    name="user-x"
-                    size={20}
-                    color={isDarkMode ? "#EF5350" : "#F44336"}
-                  />
-                </View>
-                <View style={styles.textContainer}>
-                  <DarkModeText style={styles.title}>{contact}</DarkModeText>
-                  <DarkModeSecondaryText style={styles.subtitle}>
-                    Tap to manage
-                  </DarkModeSecondaryText>
-                </View>
-                <Feather
-                  name="chevron-right"
-                  size={20}
-                  color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-                />
-              </TouchableOpacity>
-            ))
+            <>
+              {blockList.map((contact, index) => (
+                <React.Fragment key={index}>
+                  {index > 0 && <View style={styles.divider} />}
+                  <TouchableOpacity
+                    style={styles.settingItem}
+                    onPress={() => {
+                      setSelectedContact(contact);
+                      setSelectedContactIndex(index);
+                      setShowBlockedContactModal(true);
+                    }}
+                    disabled={anonymousMode}
+                  >
+                    <View
+                      style={[
+                        styles.iconContainer,
+                        {
+                          backgroundColor: isDarkMode ? "#2D3748" : "#F3F4F6",
+                        },
+                      ]}
+                    >
+                      <Feather
+                        name="user-x"
+                        size={20}
+                        color={isDarkMode ? "#EF5350" : "#F44336"}
+                      />
+                    </View>
+                    <View style={styles.textContainer}>
+                      <DarkModeText style={styles.title}>
+                        {contact}
+                      </DarkModeText>
+                      <DarkModeSecondaryText style={styles.subtitle}>
+                        Tap to manage
+                      </DarkModeSecondaryText>
+                    </View>
+                    <Feather
+                      name="chevron-right"
+                      size={20}
+                      color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
+                    />
+                  </TouchableOpacity>
+                </React.Fragment>
+              ))}
+            </>
           ) : (
             <View style={styles.emptyStateContainer}>
+              <Feather
+                name="user-check"
+                size={ResponsiveSize.font(40)}
+                color={isDarkMode ? "#3D4A5C" : "#E5E7EB"}
+                style={{ marginBottom: ResponsiveSize.padding(12) }}
+              />
               <DarkModeSecondaryText style={styles.emptyStateText}>
                 You haven't blocked any contacts yet
               </DarkModeSecondaryText>
             </View>
           )}
-        </View>
+        </SectionCard>
       </ScrollView>
 
       {/* Modals */}
@@ -559,43 +635,80 @@ const styles = StyleSheet.create({
   headerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
   },
   backButton: {
-    marginRight: ResponsiveSize.padding(16),
+    width: ResponsiveSize.width(40),
+    height: ResponsiveSize.width(40),
+    borderRadius: ResponsiveSize.width(20),
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerTitle: {
-    fontSize: ResponsiveSize.font(20),
+    fontSize: ResponsiveSize.font(24),
     fontWeight: "700",
     color: "white",
+    flex: 1,
+    textAlign: "center",
+  },
+  headerRight: {
+    width: ResponsiveSize.width(40),
+  },
+  headerButton: {
+    width: ResponsiveSize.width(40),
+    height: ResponsiveSize.width(40),
+    borderRadius: ResponsiveSize.width(20),
+    alignItems: "center",
+    justifyContent: "center",
   },
   infoContainer: {
     padding: ResponsiveSize.padding(16),
-    marginBottom: ResponsiveSize.padding(8),
+    marginBottom: ResponsiveSize.padding(16),
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: ResponsiveSize.padding(16),
+  },
+  infoIconContainer: {
+    marginRight: ResponsiveSize.padding(12),
   },
   infoText: {
     fontSize: ResponsiveSize.font(14),
     lineHeight: ResponsiveSize.font(20),
+    flex: 1,
+  },
+  sectionWrapper: {
+    marginBottom: ResponsiveSize.padding(24),
+    paddingHorizontal: ResponsiveSize.padding(16),
+  },
+  sectionCard: {
+    borderRadius: ResponsiveSize.width(16),
+    overflow: "hidden",
   },
   section: {
     marginBottom: ResponsiveSize.padding(24),
   },
   sectionTitle: {
-    fontSize: ResponsiveSize.font(12),
+    fontSize: ResponsiveSize.font(13),
     fontWeight: "600",
-    marginLeft: ResponsiveSize.padding(16),
     marginBottom: ResponsiveSize.padding(8),
+    marginLeft: ResponsiveSize.padding(4),
+    letterSpacing: 0.5,
   },
   settingItem: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: ResponsiveSize.padding(12),
+    paddingVertical: ResponsiveSize.padding(14),
     paddingHorizontal: ResponsiveSize.padding(16),
-    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#E5E7EB",
+    marginLeft: ResponsiveSize.padding(64),
   },
   iconContainer: {
-    width: ResponsiveSize.width(36),
-    height: ResponsiveSize.width(36),
-    borderRadius: ResponsiveSize.width(18),
+    width: ResponsiveSize.width(40),
+    height: ResponsiveSize.width(40),
+    borderRadius: ResponsiveSize.width(20),
     alignItems: "center",
     justifyContent: "center",
     marginRight: ResponsiveSize.padding(12),
@@ -617,13 +730,14 @@ const styles = StyleSheet.create({
   },
   emptyStateContainer: {
     padding: ResponsiveSize.padding(16),
-    paddingVertical: ResponsiveSize.padding(24),
+    paddingVertical: ResponsiveSize.padding(32),
     alignItems: "center",
     justifyContent: "center",
   },
   emptyStateText: {
     fontSize: ResponsiveSize.font(14),
     opacity: 0.7,
+    textAlign: "center",
   },
 });
 

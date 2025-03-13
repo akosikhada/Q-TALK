@@ -18,6 +18,7 @@ import SettingsScreen from "../screens/SettingsScreen";
 import ContactsScreen from "../screens/ContactsScreen";
 import CallsScreen from "../screens/CallsScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
+import ProfileScreen from "../screens/ProfileScreen";
 
 // Mock data for contacts
 const MOCK_CONTACTS = [
@@ -37,13 +38,22 @@ export type MainStackParamList = {
   Chat: { conversationId: string; contactName: string };
   NewMessage: undefined;
   Privacy: undefined;
+  Profile: undefined;
+  Security: undefined;
+  LinkedDevices: undefined;
+  ChatSettings: undefined;
+  DataStorage: undefined;
+  Language: undefined;
+  HelpCenter: undefined;
+  About: undefined;
+  Terms: undefined;
 };
 
 export type TabParamList = {
-  Messages: undefined;
-  Calls: undefined;
-  Contacts: undefined;
-  Settings: undefined;
+  messages: undefined;
+  calls: undefined;
+  contacts: undefined;
+  settings: undefined;
 };
 
 const MainStack = createStackNavigator<MainStackParamList>();
@@ -65,7 +75,7 @@ const TabNavigator: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       }}
     >
       <Tab.Screen
-        name="Messages"
+        name="messages"
         options={{
           tabBarIcon: ({ color }) => (
             <Image
@@ -78,9 +88,9 @@ const TabNavigator: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
       >
         {(props) => <MessagesScreenWrapper {...props} />}
       </Tab.Screen>
-      <Tab.Screen name="Calls" component={CallsScreenWrapper} />
-      <Tab.Screen name="Contacts" component={ContactsScreenWrapper} />
-      <Tab.Screen name="Settings">
+      <Tab.Screen name="calls" component={CallsScreenWrapper} />
+      <Tab.Screen name="contacts" component={ContactsScreenWrapper} />
+      <Tab.Screen name="settings">
         {(props) => (
           <SettingsScreen
             {...props}
@@ -98,15 +108,21 @@ const MessagesScreenWrapper = ({ navigation }: any) => {
   const handleSelectConversation = (conversationId: string) => {
     const contact = MOCK_CONTACTS.find((c) => c.id === conversationId);
     if (contact) {
-      navigation.navigate("Chat", {
-        conversationId,
-        contactName: contact.name,
-      });
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("Chat", {
+          conversationId,
+          contactName: contact.name,
+        });
+      }
     }
   };
 
   const handleNewMessage = () => {
-    navigation.navigate("NewMessage");
+    const rootNavigation = navigation.getParent();
+    if (rootNavigation) {
+      rootNavigation.navigate("NewMessage");
+    }
   };
 
   return (
@@ -123,10 +139,13 @@ const ContactsScreenWrapper = ({ navigation }: any) => {
   const handleSelectContact = (contactId: string) => {
     const contact = MOCK_CONTACTS.find((c) => c.id === contactId);
     if (contact) {
-      navigation.navigate("Chat", {
-        conversationId: contactId,
-        contactName: contact.name,
-      });
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("Chat", {
+          conversationId: contactId,
+          contactName: contact.name,
+        });
+      }
     }
   };
 
@@ -145,7 +164,7 @@ const CallsScreenWrapper = ({ navigation }: any) => {
     console.log(`Making ${isVideo ? "video" : "audio"} call to ${contactId}`);
   };
 
-  return <CallsScreen onMakeCall={handleMakeCall} navigation={navigation} />;
+  return <CallsScreen navigation={navigation} />;
 };
 
 // New Message Screen
@@ -206,6 +225,45 @@ const NewMessageScreen = ({ navigation }: any) => {
   );
 };
 
+// Placeholder Screen Component
+const PlaceholderScreen = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center",
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+      }}
+    >
+      <Feather name="alert-circle" size={48} color="#9AA5B4" />
+      <Text style={{ fontSize: 20, fontWeight: "bold", marginTop: 16 }}>
+        {route.name} Screen
+      </Text>
+      <Text
+        style={{ marginTop: 8, textAlign: "center", paddingHorizontal: 32 }}
+      >
+        This screen is under development
+      </Text>
+      <TouchableOpacity
+        style={{
+          marginTop: 24,
+          paddingVertical: 12,
+          paddingHorizontal: 24,
+          backgroundColor: "#25BE80",
+          borderRadius: 100,
+        }}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={{ color: "white", fontWeight: "600" }}>Go Back</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 // Main App Navigator
 const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
   return (
@@ -226,8 +284,18 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ onLogout }) => {
       </MainStack.Screen>
 
       <MainStack.Screen name="NewMessage" component={NewMessageScreen} />
-
       <MainStack.Screen name="Privacy" component={PrivacyScreen} />
+      <MainStack.Screen name="Profile" component={ProfileScreen} />
+
+      {/* Placeholder screens */}
+      <MainStack.Screen name="Security" component={PlaceholderScreen} />
+      <MainStack.Screen name="LinkedDevices" component={PlaceholderScreen} />
+      <MainStack.Screen name="ChatSettings" component={PlaceholderScreen} />
+      <MainStack.Screen name="DataStorage" component={PlaceholderScreen} />
+      <MainStack.Screen name="Language" component={PlaceholderScreen} />
+      <MainStack.Screen name="HelpCenter" component={PlaceholderScreen} />
+      <MainStack.Screen name="About" component={PlaceholderScreen} />
+      <MainStack.Screen name="Terms" component={PlaceholderScreen} />
     </MainStack.Navigator>
   );
 };
