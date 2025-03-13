@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   TextInput,
-  Image,
 } from "../components/StyledComponents";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -16,8 +15,9 @@ import {
   DarkModeText,
   DarkModeSecondaryText,
   ResponsiveSize,
-  BottomNavBar,
+  BottomNavigation,
   MessageActionModal,
+  Avatar,
 } from "../components";
 import { useAlert } from "../contexts/AlertContext";
 
@@ -250,32 +250,25 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
     >
       {/* Avatar */}
       <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
-          <View
-            style={[
-              styles.defaultAvatar,
-              { backgroundColor: isDarkMode ? "#3D4A5C" : "#E8E8E8" },
-            ]}
-          >
-            <Text
-              style={[
-                styles.avatarText,
-                { color: isDarkMode ? "#FFFFFF" : "#616161" },
-              ]}
-            >
-              {item.name.charAt(0)}
-            </Text>
-          </View>
-        )}
-        {item.isOnline && <View style={styles.onlineIndicator} />}
+        <Avatar
+          uri={item.avatar || undefined}
+          name={item.name}
+          size={56}
+          backgroundColor={isDarkMode ? "#3D4A5C" : "#E8E8E8"}
+          showStatus={true}
+          isOnline={item.isOnline}
+          statusSize={14}
+        />
       </View>
 
       {/* Message Content */}
       <View style={styles.contentContainer}>
         <View style={styles.nameTimeContainer}>
-          <DarkModeText style={styles.nameText}>{item.name}</DarkModeText>
+          <DarkModeText
+            style={[styles.nameText, item.unread > 0 && styles.unreadNameText]}
+          >
+            {item.name}
+          </DarkModeText>
           <View style={styles.timeContainer}>
             {item.isMuted && (
               <Feather
@@ -285,40 +278,52 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
                 style={styles.mutedIcon}
               />
             )}
-            <DarkModeSecondaryText style={styles.timeText}>
+            <DarkModeSecondaryText
+              style={[
+                styles.timeText,
+                item.unread > 0 && styles.unreadTimeText,
+              ]}
+            >
               {item.time}
             </DarkModeSecondaryText>
           </View>
         </View>
-        <Text
-          style={[
-            styles.messageText,
-            { color: isDarkMode ? "#CCCCCC" : "#616161" },
-          ]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {item.lastMessage}
-        </Text>
-      </View>
+        <View style={styles.messageContainer}>
+          <Text
+            style={[
+              styles.messageText,
+              { color: isDarkMode ? "#CCCCCC" : "#616161" },
+              item.unread > 0 && styles.unreadMessageText,
+            ]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {item.lastMessage}
+          </Text>
 
-      {/* Unread Count */}
-      {item.unread > 0 && (
-        <View
-          style={[
-            styles.unreadBadge,
-            { backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60" },
-          ]}
-        >
-          <Text style={styles.unreadText}>{item.unread}</Text>
+          {/* Unread Count */}
+          {item.unread > 0 && (
+            <View
+              style={[
+                styles.unreadBadge,
+                { backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60" },
+              ]}
+            >
+              <Text style={styles.unreadText}>{item.unread}</Text>
+            </View>
+          )}
         </View>
-      )}
+      </View>
     </TouchableOpacity>
   );
 
   const navigateToTab = (tabName: string) => {
     if (navigation) {
-      navigation.navigate(tabName);
+      // Navigate to the tab screen using the parent navigator
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("TabNavigator", { screen: tabName });
+      }
     }
   };
 
@@ -331,35 +336,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       borderBottomWidth: 1,
     },
     avatarContainer: {
-      position: "relative",
-      marginRight: ResponsiveSize.padding(12),
-    },
-    avatar: {
-      width: ResponsiveSize.width(56),
-      height: ResponsiveSize.width(56),
-      borderRadius: ResponsiveSize.width(28),
-    },
-    defaultAvatar: {
-      width: ResponsiveSize.width(56),
-      height: ResponsiveSize.width(56),
-      borderRadius: ResponsiveSize.width(28),
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    avatarText: {
-      fontSize: ResponsiveSize.font(20),
-      fontWeight: "600",
-    },
-    onlineIndicator: {
-      position: "absolute",
-      bottom: 0,
-      right: 0,
-      width: ResponsiveSize.width(14),
-      height: ResponsiveSize.width(14),
-      backgroundColor: "#4CAF50",
-      borderRadius: ResponsiveSize.width(7),
-      borderWidth: 2,
-      borderColor: isDarkMode ? "#1A202C" : "#FFFFFF",
+      marginRight: ResponsiveSize.padding(16),
     },
     contentContainer: {
       flex: 1,
@@ -369,11 +346,15 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "center",
-      marginBottom: ResponsiveSize.padding(4),
+      marginBottom: ResponsiveSize.padding(6),
     },
     nameText: {
-      fontWeight: "600",
+      fontWeight: "500",
       fontSize: ResponsiveSize.font(16),
+      flex: 1,
+    },
+    unreadNameText: {
+      fontWeight: "700",
     },
     timeContainer: {
       flexDirection: "row",
@@ -382,11 +363,26 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
     timeText: {
       fontSize: ResponsiveSize.font(12),
     },
+    unreadTimeText: {
+      fontWeight: "600",
+      color: isDarkMode ? "#25BE80" : "#1A8D60",
+    },
     mutedIcon: {
       marginRight: ResponsiveSize.padding(4),
     },
+    messageContainer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
     messageText: {
       fontSize: ResponsiveSize.font(14),
+      flex: 1,
+      paddingRight: ResponsiveSize.padding(8),
+    },
+    unreadMessageText: {
+      fontWeight: "500",
+      color: isDarkMode ? "#FFFFFF" : "#000000",
     },
     unreadBadge: {
       height: ResponsiveSize.width(22),
@@ -404,6 +400,13 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
     header: {
       paddingHorizontal: ResponsiveSize.padding(16),
       paddingBottom: ResponsiveSize.padding(12),
+      borderBottomLeftRadius: ResponsiveSize.width(20),
+      borderBottomRightRadius: ResponsiveSize.width(20),
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 4,
     },
     headerTop: {
       flexDirection: "row",
@@ -416,6 +419,14 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       lineHeight: ResponsiveSize.font(32),
       fontWeight: "700",
       color: "#FFFFFF",
+    },
+    newCallButton: {
+      width: ResponsiveSize.width(40),
+      height: ResponsiveSize.width(40),
+      borderRadius: ResponsiveSize.width(20),
+      backgroundColor: "rgba(255, 255, 255, 0.2)",
+      alignItems: "center",
+      justifyContent: "center",
     },
     searchContainer: {
       flexDirection: "row",
@@ -442,6 +453,57 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       flex: 1,
       alignItems: "center",
     },
+    headerActions: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    headerButton: {
+      marginLeft: ResponsiveSize.padding(16),
+    },
+    newMessageButton: {
+      marginLeft: ResponsiveSize.padding(16),
+    },
+    hintContainer: {
+      paddingHorizontal: ResponsiveSize.padding(16),
+      paddingVertical: ResponsiveSize.padding(8),
+      backgroundColor: isDarkMode ? "#1E293B" : "#F9FAFB",
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: isDarkMode ? "#2D3748" : "#E5E7EB",
+    },
+    hintText: {
+      fontSize: ResponsiveSize.font(12),
+      textAlign: "center",
+      fontStyle: "italic",
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: ResponsiveSize.padding(100),
+      paddingHorizontal: ResponsiveSize.padding(32),
+    },
+    emptyText: {
+      fontSize: ResponsiveSize.font(16),
+      marginTop: ResponsiveSize.padding(16),
+      textAlign: "center",
+      marginBottom: ResponsiveSize.padding(24),
+    },
+    emptyButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: ResponsiveSize.padding(12),
+      paddingHorizontal: ResponsiveSize.padding(20),
+      borderRadius: ResponsiveSize.width(100),
+      marginTop: ResponsiveSize.padding(8),
+    },
+    emptyButtonText: {
+      color: "#FFFFFF",
+      fontSize: ResponsiveSize.font(14),
+      fontWeight: "600",
+    },
+    emptyButtonIcon: {
+      marginRight: ResponsiveSize.padding(8),
+    },
   });
 
   return (
@@ -460,7 +522,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       >
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Messages</Text>
-          <TouchableOpacity onPress={onNewMessage} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
             <Feather name="edit" size={ResponsiveSize.font(22)} color="white" />
           </TouchableOpacity>
         </View>
@@ -479,8 +541,26 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Feather
+                name="x"
+                size={ResponsiveSize.font(18)}
+                color="rgba(255, 255, 255, 0.6)"
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
+
+      {/* Hint Text */}
+      {conversations.length > 0 && (
+        <View style={styles.hintContainer}>
+          <DarkModeSecondaryText style={styles.hintText}>
+            Long press on a conversation for more options
+          </DarkModeSecondaryText>
+        </View>
+      )}
 
       {/* Conversations List */}
       <FlatList
@@ -489,21 +569,48 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
         renderItem={renderItem}
         contentContainerStyle={{
           paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+          flexGrow: filteredConversations.length === 0 ? 1 : undefined,
         }}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Feather
+              name="message-square"
+              size={ResponsiveSize.font(50)}
+              color={isDarkMode ? "#3D4A5C" : "#E5E7EB"}
+            />
+            <DarkModeText style={styles.emptyText}>
+              {searchQuery
+                ? "No conversations found matching your search"
+                : "No conversations yet"}
+            </DarkModeText>
+            {!searchQuery && (
+              <TouchableOpacity
+                style={[
+                  styles.emptyButton,
+                  { backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60" },
+                ]}
+                onPress={onNewMessage}
+              >
+                <Feather
+                  name="edit"
+                  size={ResponsiveSize.font(16)}
+                  color="#FFFFFF"
+                  style={styles.emptyButtonIcon}
+                />
+                <Text style={styles.emptyButtonText}>
+                  Start a new conversation
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        }
       />
 
       {/* Bottom Navigation */}
-      <BottomNavBar
-        activeTab="Messages"
-        navigation={navigation}
+      <BottomNavigation
+        activeTab="messages"
+        onTabPress={navigateToTab}
         isDarkMode={isDarkMode}
-        badges={{
-          Messages: conversations.reduce(
-            (total, conv) => total + conv.unread,
-            0
-          ),
-          Calls: 2, // Example badge for missed calls
-        }}
       />
 
       {/* Message Action Modal */}
