@@ -1,21 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
-import { SectionList, StyleSheet } from "react-native";
+import {
+  SectionList,
+  StyleSheet,
+  Animated,
+  ScrollView,
+  SectionListData,
+} from "react-native";
 import {
   View,
   Text,
   TouchableOpacity,
   TextInput,
-  Image,
 } from "../components/StyledComponents";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialIcons } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import {
   DarkModeWrapper,
   DarkModeText,
+  DarkModeSecondaryText,
   ResponsiveSize,
-  BottomNavBar,
+  BottomNavigation,
+  Avatar,
 } from "../components";
 
 // Define the contact type
@@ -24,10 +31,43 @@ type Contact = {
   name: string;
   avatar: string;
   isOnline?: boolean;
+  phone?: string;
+  email?: string;
+  isFavorite?: boolean;
+};
+
+// Define contact group type
+type ContactGroup = {
+  id: string;
+  name: string;
+  contacts: string[]; // Array of contact IDs
 };
 
 // Mock data for contacts
 const CONTACTS: { title: string; data: Contact[] }[] = [
+  {
+    title: "Favorites",
+    data: [
+      {
+        id: "2",
+        name: "Amanda White",
+        avatar: "https://randomuser.me/api/portraits/women/90.jpg",
+        isOnline: true,
+        phone: "+1 (555) 123-4567",
+        email: "amanda.white@example.com",
+        isFavorite: true,
+      },
+      {
+        id: "8",
+        name: "Sarah Parker",
+        avatar: "https://randomuser.me/api/portraits/women/68.jpg",
+        isOnline: true,
+        phone: "+1 (555) 987-6543",
+        email: "sarah.parker@example.com",
+        isFavorite: true,
+      },
+    ],
+  },
   {
     title: "A",
     data: [
@@ -36,12 +76,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "Alex Johnson",
         avatar: "https://randomuser.me/api/portraits/men/91.jpg",
         isOnline: false,
-      },
-      {
-        id: "2",
-        name: "Amanda White",
-        avatar: "https://randomuser.me/api/portraits/women/90.jpg",
-        isOnline: true,
+        phone: "+1 (555) 234-5678",
+        email: "alex.johnson@example.com",
       },
     ],
   },
@@ -53,6 +89,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "David Wilson",
         avatar: "https://randomuser.me/api/portraits/men/54.jpg",
         isOnline: true,
+        phone: "+1 (555) 345-6789",
+        email: "david.wilson@example.com",
       },
     ],
   },
@@ -64,6 +102,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "Emma Thompson",
         avatar: "https://randomuser.me/api/portraits/women/44.jpg",
         isOnline: true,
+        phone: "+1 (555) 456-7890",
+        email: "emma.thompson@example.com",
       },
     ],
   },
@@ -75,6 +115,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "James Rodriguez",
         avatar: "https://randomuser.me/api/portraits/men/29.jpg",
         isOnline: false,
+        phone: "+1 (555) 567-8901",
+        email: "james.rodriguez@example.com",
       },
     ],
   },
@@ -86,6 +128,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "Lisa Anderson",
         avatar: "https://randomuser.me/api/portraits/women/63.jpg",
         isOnline: false,
+        phone: "+1 (555) 678-9012",
+        email: "lisa.anderson@example.com",
       },
     ],
   },
@@ -97,6 +141,8 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
         name: "Michael Chen",
         avatar: "https://randomuser.me/api/portraits/men/42.jpg",
         isOnline: false,
+        phone: "+1 (555) 789-0123",
+        email: "michael.chen@example.com",
       },
     ],
   },
@@ -104,18 +150,33 @@ const CONTACTS: { title: string; data: Contact[] }[] = [
     title: "S",
     data: [
       {
-        id: "8",
-        name: "Sarah Parker",
-        avatar: "https://randomuser.me/api/portraits/women/68.jpg",
-        isOnline: true,
-      },
-      {
         id: "9",
         name: "Sophie Turner",
         avatar: "https://randomuser.me/api/portraits/women/33.jpg",
         isOnline: true,
+        phone: "+1 (555) 890-1234",
+        email: "sophie.turner@example.com",
       },
     ],
+  },
+];
+
+// Mock data for contact groups
+const CONTACT_GROUPS: ContactGroup[] = [
+  {
+    id: "1",
+    name: "Family",
+    contacts: ["2", "8"],
+  },
+  {
+    id: "2",
+    name: "Work",
+    contacts: ["3", "7", "9"],
+  },
+  {
+    id: "3",
+    name: "Friends",
+    contacts: ["1", "4", "5", "6"],
   },
 ];
 
@@ -129,8 +190,82 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
   navigation,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [showAlphabetIndex, setShowAlphabetIndex] = useState(false);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
+  const sectionListRef = useRef<SectionList>(null);
+  const scrollY = useRef(new Animated.Value(0)).current;
+
+  // Filter contacts based on search query and active filter
+  const getFilteredContacts = () => {
+    let filteredData = [...CONTACTS];
+
+    // Apply search filter
+    if (searchQuery) {
+      filteredData = filteredData
+        .map((section) => ({
+          title: section.title,
+          data: section.data.filter(
+            (contact) =>
+              contact.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              (contact.phone && contact.phone.includes(searchQuery)) ||
+              (contact.email &&
+                contact.email.toLowerCase().includes(searchQuery.toLowerCase()))
+          ),
+        }))
+        .filter((section) => section.data.length > 0);
+    }
+
+    // Apply category filter
+    if (activeFilter !== "all") {
+      if (activeFilter === "favorites") {
+        filteredData = filteredData.filter(
+          (section) =>
+            section.title === "Favorites" ||
+            section.data.some((contact) => contact.isFavorite)
+        );
+      } else {
+        // Filter by group
+        const groupId = activeFilter;
+        const groupContacts =
+          CONTACT_GROUPS.find((group) => group.id === groupId)?.contacts || [];
+
+        filteredData = filteredData
+          .map((section) => ({
+            title: section.title,
+            data: section.data.filter((contact) =>
+              groupContacts.includes(contact.id)
+            ),
+          }))
+          .filter((section) => section.data.length > 0);
+      }
+    }
+
+    return filteredData;
+  };
+
+  const filteredContacts = getFilteredContacts();
+
+  // Function to scroll to a specific section
+  const scrollToSection = (sectionTitle: string) => {
+    const sectionIndex = filteredContacts.findIndex(
+      (section) => section.title === sectionTitle
+    );
+    if (sectionIndex !== -1 && sectionListRef.current) {
+      sectionListRef.current.scrollToLocation({
+        sectionIndex,
+        itemIndex: 0,
+        animated: true,
+        viewOffset: 0,
+      });
+    }
+  };
+
+  // Generate alphabet index for quick navigation
+  const alphabetIndex = filteredContacts
+    .map((section) => section.title)
+    .filter((title) => title !== "Favorites");
 
   const renderItem = ({ item }: { item: Contact }) => (
     <TouchableOpacity
@@ -141,59 +276,81 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
       onPress={() => onSelectContact(item.id)}
       activeOpacity={0.7}
     >
-      {/* Avatar */}
+      {/* Avatar with favorite indicator */}
       <View style={styles.avatarContainer}>
-        {item.avatar ? (
-          <Image source={{ uri: item.avatar }} style={styles.avatar} />
-        ) : (
-          <View
-            style={[
-              styles.defaultAvatar,
-              { backgroundColor: isDarkMode ? "#3D4A5C" : "#E8E8E8" },
-            ]}
-          >
-            <Text
-              style={[
-                styles.avatarText,
-                { color: isDarkMode ? "#FFFFFF" : "#616161" },
-              ]}
-            >
-              {item.name.charAt(0)}
-            </Text>
+        <Avatar
+          uri={item.avatar}
+          name={item.name}
+          size={56}
+          backgroundColor={isDarkMode ? "#3D4A5C" : "#E8E8E8"}
+          showStatus={true}
+          isOnline={item.isOnline}
+          statusSize={14}
+        />
+        {item.isFavorite && (
+          <View style={styles.favoriteIndicator}>
+            <MaterialIcons
+              name="star"
+              size={ResponsiveSize.font(12)}
+              color="#FFD700"
+            />
           </View>
         )}
-        {item.isOnline && <View style={styles.onlineIndicator} />}
       </View>
 
-      {/* Contact Name */}
-      <DarkModeText style={styles.nameText}>{item.name}</DarkModeText>
+      {/* Contact Info */}
+      <View style={styles.contactInfo}>
+        <DarkModeText style={styles.nameText}>{item.name}</DarkModeText>
+        {item.phone && (
+          <DarkModeSecondaryText style={styles.contactDetail}>
+            {item.phone}
+          </DarkModeSecondaryText>
+        )}
+      </View>
 
-      {/* Call Buttons */}
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => onSelectContact(item.id)}
-        activeOpacity={0.7}
-      >
-        <Feather
-          name="message-circle"
-          size={ResponsiveSize.font(20)}
-          color="#9AA5B4"
-        />
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => onSelectContact(item.id)}
-        activeOpacity={0.7}
-      >
-        <Feather name="phone" size={ResponsiveSize.font(20)} color="#9AA5B4" />
-      </TouchableOpacity>
+      {/* Quick Action Buttons */}
+      <View style={styles.actionButtonsContainer}>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onSelectContact(item.id)}
+          activeOpacity={0.7}
+        >
+          <Feather
+            name="message-circle"
+            size={ResponsiveSize.font(20)}
+            color={isDarkMode ? "#64B5F6" : "#2196F3"}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onSelectContact(item.id)}
+          activeOpacity={0.7}
+        >
+          <Feather
+            name="phone"
+            size={ResponsiveSize.font(20)}
+            color={isDarkMode ? "#25BE80" : "#1A8D60"}
+          />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.actionButton}
+          onPress={() => onSelectContact(item.id)}
+          activeOpacity={0.7}
+        >
+          <Feather
+            name="video"
+            size={ResponsiveSize.font(20)}
+            color={isDarkMode ? "#FF5252" : "#FF3B30"}
+          />
+        </TouchableOpacity>
+      </View>
     </TouchableOpacity>
   );
 
   const renderSectionHeader = ({
-    section: { title },
+    section,
   }: {
-    section: { title: string };
+    section: SectionListData<Contact>;
   }) => (
     <View
       style={[
@@ -207,15 +364,107 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
           { color: isDarkMode ? "#A0A0A0" : "#9AA5B4" },
         ]}
       >
-        {title}
+        {section.title}
       </Text>
     </View>
   );
 
   const navigateToTab = (tabName: string) => {
     if (navigation) {
-      navigation.navigate(tabName);
+      // Navigate to the tab screen using the parent navigator
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("TabNavigator", { screen: tabName });
+      }
     }
+  };
+
+  // Filter tabs
+  const renderFilterTabs = () => {
+    const filters = [
+      { id: "all", label: "All" },
+      { id: "favorites", label: "Favorites" },
+      ...CONTACT_GROUPS.map((group) => ({ id: group.id, label: group.name })),
+    ];
+
+    return (
+      <View
+        style={[
+          styles.filterTabsWrapper,
+          { borderBottomColor: isDarkMode ? "#3D4A5C" : "#E5E7EB" },
+        ]}
+      >
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterTabsContainer}
+          style={styles.filterTabsScroll}
+        >
+          {filters.map((filter) => (
+            <TouchableOpacity
+              key={filter.id}
+              style={[
+                styles.filterTab,
+                activeFilter === filter.id && styles.activeFilterTab,
+                {
+                  backgroundColor:
+                    activeFilter === filter.id
+                      ? isDarkMode
+                        ? "#25BE80"
+                        : "#1A8D60"
+                      : isDarkMode
+                      ? "#2D3748"
+                      : "#F3F4F6",
+                },
+              ]}
+              onPress={() => setActiveFilter(filter.id)}
+            >
+              <Text
+                style={[
+                  styles.filterTabText,
+                  {
+                    color:
+                      activeFilter === filter.id
+                        ? "#FFFFFF"
+                        : isDarkMode
+                        ? "#A0A0A0"
+                        : "#6B7280",
+                  },
+                ]}
+              >
+                {filter.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // Alphabet index for quick navigation
+  const renderAlphabetIndex = () => {
+    if (!showAlphabetIndex || alphabetIndex.length <= 1) return null;
+
+    return (
+      <View style={styles.alphabetIndexContainer}>
+        {alphabetIndex.map((letter) => (
+          <TouchableOpacity
+            key={letter}
+            style={styles.alphabetIndexItem}
+            onPress={() => scrollToSection(letter)}
+          >
+            <Text
+              style={[
+                styles.alphabetIndexText,
+                { color: isDarkMode ? "#FFFFFF" : "#1F2937" },
+              ]}
+            >
+              {letter}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+    );
   };
 
   return (
@@ -234,7 +483,7 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
       >
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Contacts</Text>
-          <TouchableOpacity activeOpacity={0.7}>
+          <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
             <Feather
               name="user-plus"
               size={ResponsiveSize.font(22)}
@@ -252,35 +501,69 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
           />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search contacts"
+            placeholder="Search contacts, phone numbers, emails..."
             placeholderTextColor="rgba(255, 255, 255, 0.6)"
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Feather
+                name="x"
+                size={ResponsiveSize.font(18)}
+                color="rgba(255, 255, 255, 0.6)"
+              />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
+      {/* Filter Tabs */}
+      {renderFilterTabs()}
+
       {/* Contacts List */}
-      <SectionList
-        sections={CONTACTS}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        stickySectionHeadersEnabled={true}
-        contentContainerStyle={{
-          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
-        }}
-      />
+      <View style={styles.listContainer}>
+        <SectionList
+          ref={sectionListRef}
+          sections={filteredContacts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          stickySectionHeadersEnabled={true}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+          }}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: false }
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Feather
+                name="users"
+                size={ResponsiveSize.font(50)}
+                color={isDarkMode ? "#3D4A5C" : "#E5E7EB"}
+              />
+              <DarkModeText style={styles.emptyText}>
+                {searchQuery
+                  ? "No contacts found matching your search"
+                  : activeFilter !== "all"
+                  ? "No contacts in this filter"
+                  : "No contacts found"}
+              </DarkModeText>
+            </View>
+          }
+        />
+
+        {/* Alphabet Index */}
+        {renderAlphabetIndex()}
+      </View>
 
       {/* Bottom Navigation */}
-      <BottomNavBar
-        activeTab="Contacts"
-        navigation={navigation}
+      <BottomNavigation
+        activeTab="contacts"
+        onTabPress={navigateToTab}
         isDarkMode={isDarkMode}
-        badges={{
-          Messages: 5, // Example badge for unread messages
-          Calls: 2, // Example badge for missed calls
-        }}
       />
     </DarkModeWrapper>
   );
@@ -290,6 +573,13 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: ResponsiveSize.padding(16),
     paddingBottom: ResponsiveSize.padding(12),
+    borderBottomLeftRadius: ResponsiveSize.width(20),
+    borderBottomRightRadius: ResponsiveSize.width(20),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   headerTop: {
     flexDirection: "row",
@@ -302,6 +592,14 @@ const styles = StyleSheet.create({
     lineHeight: ResponsiveSize.font(32),
     fontWeight: "700",
     color: "#FFFFFF",
+  },
+  newCallButton: {
+    width: ResponsiveSize.width(40),
+    height: ResponsiveSize.width(40),
+    borderRadius: ResponsiveSize.width(20),
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   searchContainer: {
     flexDirection: "row",
@@ -317,48 +615,77 @@ const styles = StyleSheet.create({
     fontSize: ResponsiveSize.font(16),
     marginLeft: ResponsiveSize.padding(8),
   },
+  filterTabsWrapper: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E7EB", // Default light mode color
+    flexDirection: "row",
+    justifyContent: "center",
+  },
+  filterTabsContainer: {
+    paddingVertical: ResponsiveSize.padding(8),
+    paddingHorizontal: ResponsiveSize.padding(16),
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  filterTab: {
+    paddingHorizontal: ResponsiveSize.padding(12),
+    paddingVertical: ResponsiveSize.padding(6),
+    borderRadius: ResponsiveSize.width(16),
+    marginRight: ResponsiveSize.padding(8),
+  },
+  activeFilterTab: {
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  filterTabText: {
+    fontSize: ResponsiveSize.font(13),
+    fontWeight: "500",
+  },
+  listContainer: {
+    flex: 1,
+    position: "relative",
+  },
   contactItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: ResponsiveSize.padding(16),
-    paddingVertical: ResponsiveSize.padding(12),
+    paddingVertical: ResponsiveSize.padding(16),
     borderBottomWidth: 1,
   },
   avatarContainer: {
     position: "relative",
-    marginRight: ResponsiveSize.padding(12),
   },
-  avatar: {
-    width: ResponsiveSize.width(56),
-    height: ResponsiveSize.width(56),
-    borderRadius: ResponsiveSize.width(28),
-  },
-  defaultAvatar: {
-    width: ResponsiveSize.width(56),
-    height: ResponsiveSize.width(56),
-    borderRadius: ResponsiveSize.width(28),
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: {
-    fontSize: ResponsiveSize.font(20),
-    fontWeight: "600",
-  },
-  onlineIndicator: {
+  favoriteIndicator: {
     position: "absolute",
-    bottom: 0,
+    top: 0,
     right: 0,
-    width: ResponsiveSize.width(14),
-    height: ResponsiveSize.width(14),
-    backgroundColor: "#4CAF50",
-    borderRadius: ResponsiveSize.width(7),
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    backgroundColor: "#FFFFFF",
+    borderRadius: ResponsiveSize.width(10),
+    padding: ResponsiveSize.padding(2),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1,
+    elevation: 2,
+  },
+  contactInfo: {
+    flex: 1,
+    marginLeft: ResponsiveSize.padding(16),
   },
   nameText: {
-    flex: 1,
-    fontWeight: "500",
+    fontWeight: "600",
     fontSize: ResponsiveSize.font(16),
+    marginBottom: ResponsiveSize.padding(2),
+  },
+  contactDetail: {
+    fontSize: ResponsiveSize.font(14),
+  },
+  actionButtonsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   actionButton: {
     padding: ResponsiveSize.padding(8),
@@ -366,11 +693,45 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     paddingHorizontal: ResponsiveSize.padding(16),
-    paddingVertical: ResponsiveSize.padding(4),
+    paddingVertical: ResponsiveSize.padding(6),
   },
   sectionTitle: {
     fontSize: ResponsiveSize.font(14),
     fontWeight: "600",
+  },
+  alphabetIndexContainer: {
+    position: "absolute",
+    right: ResponsiveSize.padding(4),
+    top: "10%",
+    bottom: "10%",
+    justifyContent: "space-between",
+    alignItems: "center",
+    zIndex: 10,
+  },
+  alphabetIndexItem: {
+    width: ResponsiveSize.width(20),
+    height: ResponsiveSize.width(20),
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  alphabetIndexText: {
+    fontSize: ResponsiveSize.font(10),
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingTop: ResponsiveSize.padding(100),
+  },
+  emptyText: {
+    fontSize: ResponsiveSize.font(16),
+    marginTop: ResponsiveSize.padding(16),
+    textAlign: "center",
+    paddingHorizontal: ResponsiveSize.padding(32),
+  },
+  filterTabsScroll: {
+    width: "100%",
   },
 });
 
