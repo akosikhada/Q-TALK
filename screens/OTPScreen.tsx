@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -9,11 +9,9 @@ import {
   DarkModeSecondaryText,
   DarkModeHeading,
   ResponsiveSize,
-} from "../components/StyledComponents";
+  OTPInput,
+} from "../components";
 import {
-  TextInput,
-  NativeSyntheticEvent,
-  TextInputKeyPressEventData,
   ActivityIndicator,
   Animated,
   Easing,
@@ -23,7 +21,6 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import LottieView from "lottie-react-native";
 import { useAlert } from "../contexts/AlertContext";
 
 type OTPScreenProps = {
@@ -39,18 +36,15 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
   onResendOTP,
   navigation,
 }) => {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [minutes, setMinutes] = useState(2);
   const [seconds, setSeconds] = useState(0);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
   const { showWarningAlert } = useAlert();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
-  const screenWidth = Dimensions.get("window").width;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -66,31 +60,6 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
 
     return () => clearInterval(interval);
   }, [minutes, seconds]);
-
-  const handleOtpChange = useCallback(
-    (text: string, index: number) => {
-      if (text.length <= 1) {
-        const newOtp = [...otp];
-        newOtp[index] = text;
-        setOtp(newOtp);
-
-        // Auto focus to next input
-        if (text.length === 1 && index < 5) {
-          inputRefs.current[index + 1]?.focus();
-        }
-      }
-    },
-    [otp]
-  );
-
-  const handleKeyPress = useCallback(
-    (e: NativeSyntheticEvent<TextInputKeyPressEventData>, index: number) => {
-      if (e.nativeEvent.key === "Backspace" && index > 0 && otp[index] === "") {
-        inputRefs.current[index - 1]?.focus();
-      }
-    },
-    [otp]
-  );
 
   const animateVerification = useCallback(() => {
     // Scale up animation
@@ -112,35 +81,37 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
     ]).start();
   }, [scaleAnim]);
 
-  const handleVerify = useCallback(() => {
-    const otpString = otp.join("");
-    if (otpString.length === 6 && /^\d+$/.test(otpString)) {
-      setIsVerifying(true);
+  const handleVerify = useCallback(
+    (otpValue: string) => {
+      if (otpValue.length === 6 && /^\d+$/.test(otpValue)) {
+        setIsVerifying(true);
 
-      // Simulate verification process
-      setTimeout(() => {
-        setIsVerifying(false);
-        setVerificationSuccess(true);
-        animateVerification();
-
-        // Call onVerify after showing success animation for a moment
+        // Simulate verification process
         setTimeout(() => {
-          // Fade out animation
-          Animated.timing(opacityAnim, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-            easing: Easing.ease,
-          }).start(() => {
-            // Call onVerify after animation completes
-            onVerify(otpString);
-          });
-        }, 2000);
-      }, 1500);
-    } else {
-      showWarningAlert("Invalid Code", "Please enter a valid 6-digit code");
-    }
-  }, [otp, animateVerification, opacityAnim, onVerify, showWarningAlert]);
+          setIsVerifying(false);
+          setVerificationSuccess(true);
+          animateVerification();
+
+          // Call onVerify after showing success animation for a moment
+          setTimeout(() => {
+            // Fade out animation
+            Animated.timing(opacityAnim, {
+              toValue: 0,
+              duration: 500,
+              useNativeDriver: true,
+              easing: Easing.ease,
+            }).start(() => {
+              // Call onVerify after animation completes
+              onVerify(otpValue);
+            });
+          }, 2000);
+        }, 1500);
+      } else {
+        showWarningAlert("Invalid Code", "Please enter a valid 6-digit code");
+      }
+    },
+    [animateVerification, opacityAnim, onVerify, showWarningAlert]
+  );
 
   const handleResend = useCallback(() => {
     onResendOTP();
@@ -179,10 +150,6 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
       width: "100%",
       maxWidth: ResponsiveSize.width(320),
     },
-    successAnimation: {
-      width: ResponsiveSize.width(200),
-      height: ResponsiveSize.width(200),
-    },
     successCircle: {
       width: ResponsiveSize.width(100),
       height: ResponsiveSize.width(100),
@@ -214,20 +181,9 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
       marginBottom: ResponsiveSize.padding(32),
     },
     otpContainer: {
-      flexDirection: "row",
-      justifyContent: "space-between",
       marginBottom: ResponsiveSize.padding(32),
       width: "100%",
       maxWidth: ResponsiveSize.width(360),
-    },
-    otpInput: {
-      width: ResponsiveSize.width(50),
-      height: ResponsiveSize.height(60),
-      borderWidth: 1,
-      borderRadius: 8,
-      textAlign: "center",
-      fontSize: ResponsiveSize.font(24),
-      fontWeight: "bold",
     },
     timerContainer: {
       alignItems: "center",
@@ -310,25 +266,11 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
 
               {/* OTP Input */}
               <View style={styles.otpContainer}>
-                {otp.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(ref) => (inputRefs.current[index] = ref)}
-                    style={[
-                      styles.otpInput,
-                      {
-                        backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA",
-                        color: isDarkMode ? "#FFFFFF" : "#212121",
-                        borderColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
-                      },
-                    ]}
-                    maxLength={1}
-                    keyboardType="number-pad"
-                    value={digit}
-                    onChangeText={(text) => handleOtpChange(text, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                  />
-                ))}
+                <OTPInput
+                  length={6}
+                  onComplete={handleVerify}
+                  isDarkMode={isDarkMode}
+                />
               </View>
 
               {/* Timer */}
@@ -358,7 +300,7 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
                       : "#1A8D60",
                   },
                 ]}
-                onPress={handleVerify}
+                onPress={() => {}}
                 disabled={isVerifying}
                 activeOpacity={0.8}
               >
