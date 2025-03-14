@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -7,85 +7,19 @@ import {
   TextInput,
   Image,
 } from "../components/StyledComponents";
-import {
-  FlatList,
-  PanResponder,
-  Animated,
-  GestureResponderEvent,
-  PanResponderGestureState,
-  Modal,
-  ScrollView,
-} from "react-native";
+import { FlatList, Animated } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  Feather,
-  MaterialIcons,
-  Ionicons,
-  FontAwesome5,
-  MaterialCommunityIcons,
-} from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-import { DarkModeWrapper, DarkModeText } from "../components/StyledComponents";
-
-// Define the message type
-type Message = {
-  id: string;
-  text: string;
-  time: string;
-  isSent: boolean;
-  reactions?: string[];
-  replyTo?: {
-    id: string;
-    text: string;
-    isSent: boolean;
-  };
-};
-
-// Mock data for messages
-const MOCK_MESSAGES: Message[] = [
-  {
-    id: "1",
-    text: "Hey there! How's it going?",
-    time: "10:30 AM",
-    isSent: false,
-  },
-  {
-    id: "2",
-    text: "I'm doing well, thanks for asking! How about you?",
-    time: "10:32 AM",
-    isSent: true,
-  },
-  {
-    id: "3",
-    text: "Pretty good! Just working on some new features for the app.",
-    time: "10:33 AM",
-    isSent: false,
-  },
-  {
-    id: "4",
-    text: "That sounds interesting! What kind of features?",
-    time: "10:35 AM",
-    isSent: true,
-  },
-  {
-    id: "5",
-    text: "We're adding message reactions and reply functionality. Users have been requesting these for a while!",
-    time: "10:36 AM",
-    isSent: false,
-  },
-  {
-    id: "6",
-    text: "That's awesome! I can't wait to try them out.",
-    time: "10:38 AM",
-    isSent: true,
-  },
-  {
-    id: "7",
-    text: "You'll be able to soon! We're rolling out the update next week.",
-    time: "10:40 AM",
-    isSent: false,
-  },
-];
+import { DarkModeWrapper } from "../components/StyledComponents";
+import { Message } from "../types/chat";
+import { useChat } from "../hooks/useChat";
+import { MOCK_MESSAGES, EMOJI_CATEGORIES } from "../utils/mockData";
+import {
+  AttachmentOptionsModal,
+  EmojiPickerModal,
+  HeaderMenuModal,
+} from "../components/chat";
 
 type ChatScreenProps = {
   conversationId: string;
@@ -94,16 +28,31 @@ type ChatScreenProps = {
   navigation?: any;
 };
 
+type EmojiCategory = {
+  title: string;
+  emojis: string[];
+};
+
 const ChatScreen: React.FC<ChatScreenProps> = ({
   conversationId,
   contactName,
   onBack,
   navigation,
 }) => {
-  const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
+  const {
+    messages,
+    replyingTo,
+    showReactions,
+    swipeAnim,
+    handleSend,
+    toggleReactions,
+    addReaction,
+    handleReply,
+    cancelReply,
+    createPanResponder,
+  } = useChat(MOCK_MESSAGES);
+
   const [newMessage, setNewMessage] = useState("");
-  const [showReactions, setShowReactions] = useState<string | null>(null);
-  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
@@ -111,369 +60,173 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
 
-  // Animation values for swipe to reply
-  const swipeAnim = useRef<{ [key: string]: Animated.Value }>({});
-
-  // Initialize swipe animations for each message
-  useEffect(() => {
-    messages.forEach((message) => {
-      if (!swipeAnim.current[message.id]) {
-        swipeAnim.current[message.id] = new Animated.Value(0);
-      }
-    });
-  }, [messages]);
-
-  const handleSend = () => {
-    if (!newMessage.trim()) return;
-
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      text: newMessage,
-      time: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      isSent: true,
-      replyTo: replyingTo
-        ? {
-            id: replyingTo.id,
-            text: replyingTo.text,
-            isSent: replyingTo.isSent,
-          }
-        : undefined,
-    };
-
-    setMessages([...messages, newMsg]);
+  const handleSendMessage = () => {
+    handleSend(newMessage);
     setNewMessage("");
-    setReplyingTo(null);
   };
-
-  const toggleReactions = (messageId: string) => {
-    if (showReactions === messageId) {
-      setShowReactions(null);
-    } else {
-      setShowReactions(messageId);
-    }
-  };
-
-  const addReaction = (messageId: string, reaction: string) => {
-    setMessages((prevMessages) =>
-      prevMessages.map((msg) =>
-        msg.id === messageId
-          ? {
-              ...msg,
-              reactions: msg.reactions
-                ? [...msg.reactions, reaction]
-                : [reaction],
-            }
-          : msg
-      )
-    );
-    setShowReactions(null);
-  };
-
-  const handleReply = (message: Message) => {
-    setReplyingTo(message);
-    // Scroll to input
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  };
-
-  const cancelReply = () => {
-    setReplyingTo(null);
-  };
-
-  const createPanResponder = (message: Message) => {
-    return PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        // Only respond to horizontal movements
-        return Math.abs(gestureState.dx) > Math.abs(gestureState.dy * 3);
-      },
-      onPanResponderGrant: () => {
-        // Reset animation when touch starts
-        swipeAnim.current[message.id].setValue(0);
-      },
-      onPanResponderMove: (_, gestureState) => {
-        // Only allow swiping right (positive dx)
-        if (gestureState.dx > 0) {
-          // Limit the swipe distance
-          const swipeDistance = Math.min(gestureState.dx, 100);
-          swipeAnim.current[message.id].setValue(swipeDistance);
-        }
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        // If swiped far enough to the right, trigger reply
-        if (gestureState.dx > 80) {
-          handleReply(message);
-        }
-
-        // Animate back to original position
-        Animated.spring(swipeAnim.current[message.id], {
-          toValue: 0,
-          useNativeDriver: true,
-          friction: 5,
-        }).start();
-      },
-    });
-  };
-
-  // Emoji data for the emoji picker
-  const emojiCategories = [
-    {
-      title: "Smileys & Emotion",
-      emojis: [
-        "😀",
-        "😃",
-        "😄",
-        "😁",
-        "😆",
-        "😅",
-        "😂",
-        "🤣",
-        "😊",
-        "😇",
-        "🙂",
-        "🙃",
-        "😉",
-        "😌",
-        "😍",
-        "🥰",
-        "😘",
-      ],
-    },
-    {
-      title: "People & Body",
-      emojis: [
-        "👍",
-        "👎",
-        "👌",
-        "✌️",
-        "🤞",
-        "🤟",
-        "🤘",
-        "🤙",
-        "👈",
-        "👉",
-        "👆",
-        "👇",
-        "👋",
-        "🤚",
-        "🖐️",
-        "✋",
-        "🖖",
-      ],
-    },
-    {
-      title: "Animals & Nature",
-      emojis: [
-        "🐶",
-        "🐱",
-        "🐭",
-        "🐹",
-        "🐰",
-        "🦊",
-        "🐻",
-        "🐼",
-        "🐨",
-        "🐯",
-        "🦁",
-        "🐮",
-        "🐷",
-        "🐸",
-        "🐵",
-        "🐔",
-        "🐧",
-      ],
-    },
-    {
-      title: "Food & Drink",
-      emojis: [
-        "🍎",
-        "🍐",
-        "🍊",
-        "🍋",
-        "🍌",
-        "🍉",
-        "🍇",
-        "🍓",
-        "🍈",
-        "🍒",
-        "🍑",
-        "🥭",
-        "🍍",
-        "🥥",
-        "🥝",
-        "🍅",
-        "🍆",
-      ],
-    },
-    {
-      title: "Travel & Places",
-      emojis: [
-        "🚗",
-        "🚕",
-        "🚙",
-        "🚌",
-        "🚎",
-        "🏎️",
-        "🚓",
-        "🚑",
-        "🚒",
-        "🚐",
-        "🚚",
-        "🚛",
-        "🚜",
-        "🛴",
-        "🚲",
-        "🛵",
-        "🏍️",
-      ],
-    },
-  ];
 
   const handleInsertEmoji = (emoji: string) => {
     setNewMessage((prev) => prev + emoji);
     setShowEmojiPicker(false);
   };
 
-  const renderMessage = ({ item }: { item: Message }) => {
-    // Create pan responder for this message if it doesn't exist
-    if (!swipeAnim.current[item.id]) {
-      swipeAnim.current[item.id] = new Animated.Value(0);
-    }
-
-    const panResponder = createPanResponder(item);
-
-    return (
-      <View className="mb-4">
-        {/* Reply preview if this message is a reply */}
-        {item.replyTo && (
-          <View
-            className={`p-2 rounded-lg max-w-[80%] mb-1 ${
-              item.isSent
-                ? "self-end mr-2 " +
-                  (isDarkMode ? "bg-gray-800" : "bg-gray-200")
-                : "self-start ml-2 " +
-                  (isDarkMode ? "bg-gray-800" : "bg-gray-100")
-            }`}
-          >
+  const renderMessage = ({ item }: { item: Message }) => (
+    <View className="mb-3">
+      {item.replyTo && (
+        <View
+          className={`p-2 rounded-lg max-w-[75%] mb-1 ${
+            item.isSent
+              ? "self-end mr-2 bg-opacity-10 " +
+                (isDarkMode ? "bg-gray-600" : "bg-gray-300")
+              : "self-start ml-2 bg-opacity-10 " +
+                (isDarkMode ? "bg-gray-600" : "bg-gray-300")
+          }`}
+        >
+          <View className="flex-row items-center mb-1">
+            <View className="w-0.5 h-3 bg-primary rounded-full mr-2" />
             <Text
-              className={isDarkMode ? "text-gray-400" : "text-text-secondary"}
+              className={`text-xs font-medium ${
+                isDarkMode ? "text-gray-300" : "text-gray-600"
+              }`}
             >
               {item.replyTo.isSent ? "You" : contactName}
             </Text>
-            <Text
-              className={isDarkMode ? "text-gray-400" : "text-text-secondary"}
-              numberOfLines={1}
-            >
-              {item.replyTo.text}
-            </Text>
           </View>
-        )}
+          <Text
+            className={`text-sm ${
+              isDarkMode ? "text-gray-400" : "text-gray-600"
+            }`}
+            numberOfLines={1}
+          >
+            {item.replyTo.text}
+          </Text>
+        </View>
+      )}
 
-        {/* Message bubble with swipe animation */}
-        <Animated.View
-          {...panResponder.panHandlers}
-          style={{
-            transform: [{ translateX: swipeAnim.current[item.id] }],
-            alignSelf: item.isSent ? "flex-end" : "flex-start",
-            maxWidth: "80%",
-          }}
+      <Animated.View
+        {...createPanResponder(item).panHandlers}
+        style={{
+          transform: [
+            { translateX: swipeAnim[item.id] || new Animated.Value(0) },
+          ],
+          alignSelf: item.isSent ? "flex-end" : "flex-start",
+          maxWidth: "75%",
+          width: "auto",
+          flexDirection: item.isSent ? "row-reverse" : "row",
+        }}
+      >
+        <View
+          className={`p-3 rounded-2xl flex-1 shadow-sm ${
+            item.isSent
+              ? isDarkMode
+                ? "bg-primary rounded-tr-none"
+                : "bg-primary rounded-tr-none"
+              : isDarkMode
+              ? "bg-gray-800 rounded-tl-none"
+              : "bg-white rounded-tl-none"
+          }`}
         >
           <TouchableOpacity
             onLongPress={() => toggleReactions(item.id)}
-            activeOpacity={0.8}
+            activeOpacity={1}
             delayLongPress={200}
           >
-            <View
-              className={`p-3 rounded-lg ${
+            <Text
+              className={`text-[15px] leading-[20px] ${
                 item.isSent
-                  ? isDarkMode
-                    ? "bg-bubble-sentDark rounded-tr-none"
-                    : "bg-bubble-sent rounded-tr-none"
+                  ? "text-white"
                   : isDarkMode
-                  ? "bg-bubble-receivedDark rounded-tl-none"
-                  : "bg-bubble-received rounded-tl-none"
+                  ? "text-gray-100"
+                  : "text-gray-800"
               }`}
             >
-              <Text
-                className={`text-base ${
-                  item.isSent
-                    ? "text-text-light"
-                    : isDarkMode
-                    ? "text-text-dark-primary"
-                    : "text-text-primary"
-                }`}
-              >
-                {item.text}
-              </Text>
-              <Text
-                className={`text-xs ${
-                  item.isSent
-                    ? "text-text-light/70"
-                    : isDarkMode
-                    ? "text-text-dark-secondary"
-                    : "text-text-secondary"
-                } self-end mt-1`}
-              >
-                {item.time}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </Animated.View>
-
-        {/* Reaction buttons */}
-        {showReactions === item.id && (
-          <View
-            className={`flex-row ${
-              isDarkMode ? "bg-gray-800" : "bg-background-light"
-            } rounded-full p-1 shadow-md mt-2 ${
-              item.isSent ? "self-end" : "self-start"
-            }`}
-          >
-            {["❤️", "👍", "😂", "😮", "😢"].map((reaction) => (
-              <TouchableOpacity
-                key={reaction}
-                className="px-2 py-1"
-                onPress={() => addReaction(item.id, reaction)}
-                activeOpacity={0.7}
-              >
-                <Text>{reaction}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
-
-        {/* Reactions display */}
-        {item.reactions && item.reactions.length > 0 && (
-          <View
-            className={`flex-row ${
-              isDarkMode ? "bg-gray-800" : "bg-background-light"
-            } rounded-full px-2 py-1 shadow-sm mt-1 ${
-              item.isSent ? "self-end" : "self-start"
-            }`}
-          >
-            {item.reactions.map((reaction, index) => (
-              <Text key={index} className="mr-1">
-                {reaction}
-              </Text>
-            ))}
-            <Text
-              className={
-                isDarkMode
-                  ? "text-text-dark-secondary text-xs ml-1"
-                  : "text-text-secondary text-xs ml-1"
-              }
-            >
-              {item.reactions.length}
+              {item.text}
             </Text>
-          </View>
-        )}
+            <Text
+              className={`text-xs mt-1 ${
+                item.isSent
+                  ? "text-white/70"
+                  : isDarkMode
+                  ? "text-gray-400"
+                  : "text-gray-500"
+              } self-end`}
+            >
+              {item.time}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.View>
+
+      {showReactions === item.id && (
+        <View
+          className={`flex-row items-center ${
+            isDarkMode ? "bg-gray-800" : "bg-white"
+          } rounded-full py-1.5 px-2 shadow-lg mt-2 ${
+            item.isSent ? "self-end" : "self-start"
+          }`}
+        >
+          {["❤️", "👍", "😂", "😮", "😢"].map((reaction: string) => (
+            <TouchableOpacity
+              key={reaction}
+              className="px-2.5 py-1"
+              onPress={() => addReaction(item.id, reaction)}
+              activeOpacity={0.7}
+            >
+              <Text className="text-lg">{reaction}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {item.reactions && item.reactions.length > 0 && (
+        <View
+          className={`flex-row items-center ${
+            isDarkMode ? "bg-gray-800/80" : "bg-white/90"
+          } rounded-full px-2 py-1 shadow-sm mt-1 ${
+            item.isSent ? "self-end" : "self-start"
+          }`}
+        >
+          {item.reactions.map((reaction: string, index: number) => (
+            <Text key={index} className="mr-0.5 text-sm">
+              {reaction}
+            </Text>
+          ))}
+          <Text
+            className={`text-xs ml-1 ${
+              isDarkMode ? "text-gray-400" : "text-gray-500"
+            }`}
+          >
+            {item.reactions.length}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderEmojiCategory = (category: EmojiCategory, index: number) => (
+    <View key={index} className="mb-4">
+      <Text
+        className={
+          isDarkMode
+            ? "text-text-dark-secondary font-medium mb-2"
+            : "text-text-secondary font-medium mb-2"
+        }
+      >
+        {category.title}
+      </Text>
+      <View className="flex-row flex-wrap">
+        {category.emojis.map((emoji: string, emojiIndex: number) => (
+          <TouchableOpacity
+            key={emojiIndex}
+            className="p-2"
+            onPress={() => handleInsertEmoji(emoji)}
+          >
+            <Text className="text-2xl">{emoji}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
-    );
-  };
+    </View>
+  );
 
   return (
     <DarkModeWrapper>
@@ -481,38 +234,46 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Header */}
       <View
-        className="bg-primary px-4 pb-3 flex-row items-center"
+        className={`bg-primary shadow-md px-4 pb-3 flex-row items-center ${
+          isDarkMode ? "" : "shadow-black/5"
+        }`}
         style={{ paddingTop: insets.top + 10 }}
       >
-        <TouchableOpacity onPress={onBack} activeOpacity={0.7} className="mr-3">
+        <TouchableOpacity
+          onPress={onBack}
+          activeOpacity={0.7}
+          className="mr-3 p-1"
+        >
           <Feather name="arrow-left" size={24} color="white" />
         </TouchableOpacity>
 
         <View className="flex-1 flex-row items-center">
           <View className="relative mr-3">
-            <View className="w-10 h-10 bg-gray-200 rounded-full items-center justify-center">
-              <Text className="text-gray-500 font-semibold">
+            <View className="w-10 h-10 bg-white/10 rounded-full items-center justify-center">
+              <Text className="text-white font-semibold text-lg">
                 {contactName.charAt(0)}
               </Text>
             </View>
-            <View className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-primary" />
+            <View className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-primary" />
           </View>
 
           <View className="flex-1">
-            <Text className="text-text-light font-semibold">{contactName}</Text>
-            <Text className="text-text-light/70 text-xs">Online</Text>
+            <Text className="text-white font-semibold text-base">
+              {contactName}
+            </Text>
+            <Text className="text-white/70 text-xs font-medium">Online</Text>
           </View>
         </View>
 
-        <View className="flex-row">
-          <TouchableOpacity className="ml-4" activeOpacity={0.7}>
+        <View className="flex-row items-center">
+          <TouchableOpacity className="p-2" activeOpacity={0.7}>
             <Feather name="phone" size={20} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity className="ml-4" activeOpacity={0.7}>
+          <TouchableOpacity className="p-2 mx-1" activeOpacity={0.7}>
             <Feather name="video" size={20} color="white" />
           </TouchableOpacity>
           <TouchableOpacity
-            className="ml-4"
+            className="p-2"
             activeOpacity={0.7}
             onPress={() => setShowHeaderMenu(true)}
           >
@@ -532,38 +293,54 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
           paddingBottom: insets.bottom + 80,
         }}
         inverted={false}
+        showsVerticalScrollIndicator={false}
       />
 
       {/* Reply Preview */}
       {replyingTo && (
         <View
-          className={`flex-row items-center ${
-            isDarkMode ? "bg-gray-800" : "bg-gray-100"
-          } px-4 py-2 border-t ${
+          className={`flex-row items-center justify-between ${
+            isDarkMode ? "bg-gray-800/95" : "bg-gray-50/95"
+          } px-4 py-3 border-t ${
             isDarkMode ? "border-gray-700" : "border-gray-200"
           }`}
+          style={{
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.05,
+            shadowRadius: 3,
+            elevation: 3,
+          }}
         >
-          <View className="flex-1">
-            <View className="flex-row items-center">
-              <View className="w-1 h-4 bg-primary rounded-full mr-2" />
-              <DarkModeText className="font-medium">
+          <View className="flex-row items-center flex-1 mr-3">
+            <View className="w-1 h-4 bg-primary rounded-full mr-2" />
+            <View className="flex-1">
+              <Text
+                className={`text-xs font-medium mb-0.5 ${
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                }`}
+              >
                 {replyingTo.isSent ? "You" : contactName}
-              </DarkModeText>
+              </Text>
+              <Text
+                className={`text-sm ${
+                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                }`}
+                numberOfLines={1}
+              >
+                {replyingTo.text}
+              </Text>
             </View>
-            <Text
-              className={
-                isDarkMode ? "text-text-dark-secondary" : "text-text-secondary"
-              }
-              numberOfLines={1}
-            >
-              {replyingTo.text}
-            </Text>
           </View>
-          <TouchableOpacity onPress={cancelReply} activeOpacity={0.7}>
+          <TouchableOpacity
+            onPress={cancelReply}
+            activeOpacity={0.7}
+            className="p-2 -mr-2"
+          >
             <Feather
               name="x"
               size={20}
-              color={isDarkMode ? "#9AA5B4" : "#9AA5B4"}
+              color={isDarkMode ? "#9AA5B4" : "#64748B"}
             />
           </TouchableOpacity>
         </View>
@@ -571,326 +348,123 @@ const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Message Input */}
       <View
-        className={`flex-row items-center border-t ${
+        className={`flex-row items-end border-t ${
           isDarkMode
-            ? "border-gray-700 bg-gray-900"
-            : "border-gray-200 bg-background-light"
+            ? "border-gray-800 bg-gray-900"
+            : "border-gray-100 bg-white"
         } px-4 py-2`}
-        style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 8 }}
+        style={{
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: 0.1,
+          shadowRadius: 3,
+          elevation: 3,
+        }}
       >
         <TouchableOpacity
-          className="mr-3"
+          className="mr-2 p-2"
           activeOpacity={0.7}
           onPress={() => setShowAttachmentOptions(true)}
         >
           <Feather
-            name="plus"
+            name="plus-circle"
             size={24}
-            color={isDarkMode ? "#9AA5B4" : "#9AA5B4"}
+            color={isDarkMode ? "#9AA5B4" : "#64748B"}
           />
         </TouchableOpacity>
 
         <View
-          className={`flex-1 flex-row items-center ${
+          className={`flex-1 flex-row items-end ${
             isDarkMode ? "bg-gray-800" : "bg-gray-100"
-          } rounded-full px-4 py-2 mr-2`}
+          } rounded-2xl px-3 py-2 mr-2 min-h-[40px] max-h-[120px]`}
         >
           <TextInput
-            className={
-              isDarkMode ? "flex-1 text-white" : "flex-1 text-text-primary"
-            }
+            className={`flex-1 mr-2 ${
+              isDarkMode ? "text-white" : "text-gray-800"
+            } text-base leading-[22px]`}
             placeholder="Type a message..."
-            placeholderTextColor={isDarkMode ? "#9AA5B4" : "#9AA5B4"}
+            placeholderTextColor={isDarkMode ? "#9AA5B4" : "#94A3B8"}
             value={newMessage}
             onChangeText={setNewMessage}
             multiline
+            style={{ paddingTop: 0, paddingBottom: 0 }}
           />
           <TouchableOpacity
             activeOpacity={0.7}
             onPress={() => setShowEmojiPicker(true)}
+            className="pb-0.5"
           >
-            <Feather name="smile" size={20} color="#9AA5B4" />
+            <Feather
+              name="smile"
+              size={22}
+              color={isDarkMode ? "#9AA5B4" : "#64748B"}
+            />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity
           className={`w-10 h-10 rounded-full items-center justify-center ${
-            newMessage.trim() ? "bg-primary" : "bg-gray-300"
+            newMessage.trim()
+              ? "bg-primary"
+              : isDarkMode
+              ? "bg-gray-700"
+              : "bg-gray-200"
           }`}
-          onPress={handleSend}
+          onPress={handleSendMessage}
           disabled={!newMessage.trim()}
           activeOpacity={0.7}
         >
-          <Feather name="send" size={18} color="white" />
+          <Feather
+            name="send"
+            size={18}
+            color={
+              newMessage.trim() ? "white" : isDarkMode ? "#9AA5B4" : "#94A3B8"
+            }
+          />
         </TouchableOpacity>
       </View>
 
-      {/* Attachment Options Modal */}
-      <Modal
+      {/* Modals */}
+      <AttachmentOptionsModal
         visible={showAttachmentOptions}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowAttachmentOptions(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
-          activeOpacity={1}
-          onPress={() => setShowAttachmentOptions(false)}
-        >
-          <View
-            className={`${
-              isDarkMode ? "bg-gray-900" : "bg-background-light"
-            } rounded-t-3xl absolute bottom-0 left-0 right-0 p-6`}
-            style={{ paddingBottom: insets.bottom + 20 }}
-          >
-            <View className="w-16 h-1 bg-gray-300 rounded-full self-center mb-6" />
+        onClose={() => setShowAttachmentOptions(false)}
+        isDarkMode={isDarkMode}
+      />
 
-            <DarkModeText className="text-lg font-semibold mb-4">
-              Share Content
-            </DarkModeText>
-
-            <View className="flex-row flex-wrap justify-between">
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-blue-500 items-center justify-center mb-2">
-                  <Feather name="camera" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Camera</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-green-500 items-center justify-center mb-2">
-                  <Feather name="image" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Gallery</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-purple-500 items-center justify-center mb-2">
-                  <Feather name="file" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Document</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-red-500 items-center justify-center mb-2">
-                  <Feather name="map-pin" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Location</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-yellow-500 items-center justify-center mb-2">
-                  <Feather name="user" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Contact</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-orange-500 items-center justify-center mb-2">
-                  <Feather name="music" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Audio</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-pink-500 items-center justify-center mb-2">
-                  <Feather name="gift" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">GIF</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                className="items-center w-1/4 mb-6"
-                onPress={() => setShowAttachmentOptions(false)}
-              >
-                <View className="w-12 h-12 rounded-full bg-teal-500 items-center justify-center mb-2">
-                  <Feather name="mic" size={24} color="white" />
-                </View>
-                <Text className="text-text-secondary text-xs">Voice</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Emoji Picker Modal */}
-      <Modal
+      <EmojiPickerModal
         visible={showEmojiPicker}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowEmojiPicker(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
-          activeOpacity={1}
-          onPress={() => setShowEmojiPicker(false)}
-        >
-          <View
-            className={`${
-              isDarkMode ? "bg-gray-900" : "bg-background-light"
-            } rounded-t-3xl absolute bottom-0 left-0 right-0 p-4`}
-            style={{ height: "50%", paddingBottom: insets.bottom + 20 }}
-          >
-            <View className="w-16 h-1 bg-gray-300 rounded-full self-center mb-4" />
+        onClose={() => setShowEmojiPicker(false)}
+        onEmojiSelect={handleInsertEmoji}
+        isDarkMode={isDarkMode}
+        categories={EMOJI_CATEGORIES}
+      />
 
-            <DarkModeText className="text-lg font-semibold mb-2">
-              Emojis
-            </DarkModeText>
-
-            <ScrollView>
-              {emojiCategories.map((category, index) => (
-                <View key={index} className="mb-4">
-                  <Text
-                    className={
-                      isDarkMode
-                        ? "text-text-dark-secondary font-medium mb-2"
-                        : "text-text-secondary font-medium mb-2"
-                    }
-                  >
-                    {category.title}
-                  </Text>
-                  <View className="flex-row flex-wrap">
-                    {category.emojis.map((emoji, emojiIndex) => (
-                      <TouchableOpacity
-                        key={emojiIndex}
-                        className="p-2"
-                        onPress={() => handleInsertEmoji(emoji)}
-                      >
-                        <Text className="text-2xl">{emoji}</Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* Header Menu Modal */}
-      <Modal
+      <HeaderMenuModal
         visible={showHeaderMenu}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowHeaderMenu(false)}
-      >
-        <TouchableOpacity
-          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)" }}
-          activeOpacity={1}
-          onPress={() => setShowHeaderMenu(false)}
-        >
-          <View
-            className={`${
-              isDarkMode ? "bg-gray-900" : "bg-background-light"
-            } rounded-lg absolute top-20 right-4 shadow-lg`}
-            style={{ width: 200 }}
-          >
-            <TouchableOpacity
-              className={`flex-row items-center px-4 py-3 border-b ${
-                isDarkMode ? "border-gray-700" : "border-gray-200"
-              }`}
-              onPress={() => {
-                setShowHeaderMenu(false);
-                // Handle view contact
-              }}
-            >
-              <Feather name="user" size={18} color="#1A8D60" className="mr-3" />
-              <DarkModeText>View Contact</DarkModeText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className={`flex-row items-center px-4 py-3 border-b ${
-                isDarkMode ? "border-gray-700" : "border-gray-200"
-              }`}
-              onPress={() => {
-                setShowHeaderMenu(false);
-                // Handle media, links, docs
-              }}
-            >
-              <Feather
-                name="image"
-                size={18}
-                color="#1A8D60"
-                className="mr-3"
-              />
-              <DarkModeText>Media, Links, Docs</DarkModeText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className={`flex-row items-center px-4 py-3 border-b ${
-                isDarkMode ? "border-gray-700" : "border-gray-200"
-              }`}
-              onPress={() => {
-                setShowHeaderMenu(false);
-                // Handle search
-              }}
-            >
-              <Feather
-                name="search"
-                size={18}
-                color="#1A8D60"
-                className="mr-3"
-              />
-              <DarkModeText>Search</DarkModeText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className={`flex-row items-center px-4 py-3 border-b ${
-                isDarkMode ? "border-gray-700" : "border-gray-200"
-              }`}
-              onPress={() => {
-                setShowHeaderMenu(false);
-                // Handle mute notifications
-              }}
-            >
-              <Feather
-                name="bell-off"
-                size={18}
-                color="#1A8D60"
-                className="mr-3"
-              />
-              <DarkModeText>Mute Notifications</DarkModeText>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              className="flex-row items-center px-4 py-3"
-              onPress={() => {
-                setShowHeaderMenu(false);
-                // Handle block
-              }}
-            >
-              <Feather
-                name="slash"
-                size={18}
-                color="#E53935"
-                className="mr-3"
-              />
-              <Text className="text-red-500">Block</Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+        onClose={() => setShowHeaderMenu(false)}
+        isDarkMode={isDarkMode}
+        onViewContact={() => {
+          setShowHeaderMenu(false);
+          // Handle view contact
+        }}
+        onViewMedia={() => {
+          setShowHeaderMenu(false);
+          // Handle media, links, docs
+        }}
+        onSearch={() => {
+          setShowHeaderMenu(false);
+          // Handle search
+        }}
+        onMuteNotifications={() => {
+          setShowHeaderMenu(false);
+          // Handle mute notifications
+        }}
+        onBlock={() => {
+          setShowHeaderMenu(false);
+          // Handle block
+        }}
+      />
     </DarkModeWrapper>
   );
 };

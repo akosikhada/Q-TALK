@@ -16,109 +16,39 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
-
-// Define the call type
-type Call = {
-  id: string;
-  name: string;
-  avatar: string;
-  type: "incoming" | "outgoing" | "missed" | "video";
-  time: string;
-  date: string;
-};
-
-// Mock data for calls
-const MOCK_CALLS: Call[] = [
-  {
-    id: "1",
-    name: "Sarah Johnson",
-    avatar: "https://randomuser.me/api/portraits/women/44.jpg",
-    type: "incoming",
-    time: "10:30 AM",
-    date: "Today",
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    avatar: "https://randomuser.me/api/portraits/men/32.jpg",
-    type: "outgoing",
-    time: "Yesterday",
-    date: "9:15 PM",
-  },
-  {
-    id: "3",
-    name: "Emma Wilson",
-    avatar: "https://randomuser.me/api/portraits/women/22.jpg",
-    type: "missed",
-    time: "Yesterday",
-    date: "3:45 PM",
-  },
-  {
-    id: "4",
-    name: "James Rodriguez",
-    avatar: "https://randomuser.me/api/portraits/men/67.jpg",
-    type: "video",
-    time: "Monday",
-    date: "5:20 PM",
-  },
-  {
-    id: "5",
-    name: "Olivia Taylor",
-    avatar: "https://randomuser.me/api/portraits/women/17.jpg",
-    type: "incoming",
-    time: "Monday",
-    date: "11:05 AM",
-  },
-  {
-    id: "6",
-    name: "William Brown",
-    avatar: "https://randomuser.me/api/portraits/men/3.jpg",
-    type: "outgoing",
-    time: "Sunday",
-    date: "8:30 PM",
-  },
-  {
-    id: "7",
-    name: "Sophia Martinez",
-    avatar: "https://randomuser.me/api/portraits/women/28.jpg",
-    type: "missed",
-    time: "Sunday",
-    date: "2:15 PM",
-  },
-  {
-    id: "8",
-    name: "Benjamin Lee",
-    avatar: "https://randomuser.me/api/portraits/men/91.jpg",
-    type: "video",
-    time: "Saturday",
-    date: "4:50 PM",
-  },
-  {
-    id: "9",
-    name: "Isabella Garcia",
-    avatar: "https://randomuser.me/api/portraits/women/63.jpg",
-    type: "incoming",
-    time: "Saturday",
-    date: "10:10 AM",
-  },
-  {
-    id: "10",
-    name: "Ethan Wilson",
-    avatar: "https://randomuser.me/api/portraits/men/40.jpg",
-    type: "outgoing",
-    time: "Friday",
-    date: "7:25 PM",
-  },
-];
-
-type CallsScreenProps = {
-  navigation?: any;
-};
+import { Call, CallsScreenProps } from "../types/calls";
+import { MOCK_CALLS } from "../utils/mockCalls";
 
 const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "2-digit",
+      day: "2-digit",
+      year: "2-digit",
+    });
+  };
+
+  const getGroupTitle = (date: Date) => {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return formatDate(date);
+  };
 
   const filteredCalls = MOCK_CALLS.filter((call) =>
     call.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -126,11 +56,12 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
 
   // Group calls by date for section list
   const groupedCalls = filteredCalls.reduce((groups, call) => {
-    const group = groups.find((g) => g.title === call.date);
+    const title = getGroupTitle(call.timestamp);
+    const group = groups.find((g) => g.title === title);
     if (group) {
       group.data.push(call);
     } else {
-      groups.push({ title: call.date, data: [call] });
+      groups.push({ title, data: [call] });
     }
     return groups;
   }, [] as { title: string; data: Call[] }[]);
@@ -251,9 +182,14 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
           <DarkModeText style={styles.callName}>{item.name}</DarkModeText>
           <View style={styles.callTimeContainer}>
             {getCallIcon(item.type)}
-            <DarkModeSecondaryText style={styles.callTime}>
-              {item.time}
-            </DarkModeSecondaryText>
+            <View>
+              <DarkModeSecondaryText style={styles.callTime}>
+                {formatTime(item.timestamp)}
+              </DarkModeSecondaryText>
+              <DarkModeSecondaryText style={styles.callDate}>
+                {formatDate(item.timestamp)}
+              </DarkModeSecondaryText>
+            </View>
           </View>
         </View>
       </View>
@@ -350,7 +286,11 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Calls</Text>
           <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
-            <Feather name="phone-call" size={ResponsiveSize.font(22)} color="white" />
+            <Feather
+              name="phone-call"
+              size={ResponsiveSize.font(22)}
+              color="white"
+            />
           </TouchableOpacity>
         </View>
 
@@ -511,6 +451,10 @@ const styles = StyleSheet.create({
   },
   callTime: {
     fontSize: ResponsiveSize.font(14),
+  },
+  callDate: {
+    fontSize: ResponsiveSize.font(14),
+    opacity: 0.7,
   },
   callButtonsContainer: {
     flexDirection: "row",
