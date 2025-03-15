@@ -19,7 +19,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/SimpleLogo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.anonymous.qtalk"
     },
     "web": {
       "favicon": "./assets/SimpleLogo.png"

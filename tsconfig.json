@@ -8,6 +8,13 @@
     "baseUrl": ".",
     "paths": {
       "*": ["*", "components/*"]
-    }
-  }
+    },
+    "target": "esnext",
+    "module": "commonjs",
+    "lib": ["esnext"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "moduleResolution": "node"
+  },
+  "exclude": ["node_modules", "babel.config.js", "metro.config.js"]
 }
