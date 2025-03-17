@@ -3,3 +3,7 @@ export { default as GroupAddPermissionModal } from "./GroupAddPermissionModal";
 export { default as CallsPermissionModal } from "./CallsPermissionModal";
 export { default as MessageRetentionModal } from "./MessageRetentionModal";
 export { default as BlockedContactActionModal } from "./BlockedContactActionModal";
+export { default as ThemePreferencesModal } from "./ThemePreferencesModal";
+export { default as NewContactModal } from "./NewContactModal";
+export { default as CallContactModal } from "./CallContactModal";
+export { default as MessageContactModal } from "./MessageContactModal";
