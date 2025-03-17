@@ -163,10 +163,10 @@ const BottomNavBar: React.FC<BottomNavBarProps> = ({
           paddingBottom:
             insets.bottom > 0 ? insets.bottom : ResponsiveSize.padding(8),
           shadowColor: "#000",
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: isDarkMode ? 0.2 : 0.1,
-          shadowRadius: 3,
-          elevation: 5,
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: isDarkMode ? 0.3 : 0.15,
+          shadowRadius: 5,
+          elevation: 8,
         },
       ]}
     >
