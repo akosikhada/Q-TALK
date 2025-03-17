@@ -19,6 +19,7 @@ import {
   MessageActionModal,
   Avatar,
 } from "../components";
+import { MessageContactModal } from "../components/modals";
 import { useAlert } from "../contexts/AlertContext";
 import { Conversation, MessagesScreenProps } from "../types/messages";
 import { MOCK_CONVERSATIONS } from "../utils/mockMessages";
@@ -34,6 +35,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
+  const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
   const { showSuccessAlert, showInfoAlert, showConfirmAlert } = useAlert();
@@ -161,6 +163,36 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
             `Conversation with ${selectedConversation.name} has been deleted.`
           );
         }
+      );
+    }
+  };
+
+  const handleSelectContact = (contact: any) => {
+    // In a real app, you would create a new conversation or navigate to an existing one
+    showSuccessAlert(
+      "New Conversation",
+      `Starting a new conversation with ${
+        Array.isArray(contact) ? `${contact.length} contacts` : contact.name
+      }`
+    );
+
+    // If this is a single contact, find if we already have a conversation
+    if (!Array.isArray(contact)) {
+      const existingConversation = conversations.find(
+        (conv) => conv.name === contact.name
+      );
+
+      if (existingConversation) {
+        onSelectConversation(existingConversation.id);
+      } else {
+        // In a real app, you would create a new conversation here
+        console.log("Would create new conversation with", contact.name);
+      }
+    } else {
+      // In a real app, you would create a new group conversation
+      console.log(
+        "Would create new group with",
+        contact.map((c) => c.name).join(", ")
       );
     }
   };
@@ -450,7 +482,13 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       >
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Messages</Text>
-          <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.newCallButton}
+            activeOpacity={0.7}
+            onPress={() =>
+              onNewMessage ? onNewMessage() : setShowNewMessageModal(true)
+            }
+          >
             <Feather name="edit" size={ResponsiveSize.font(22)} color="white" />
           </TouchableOpacity>
         </View>
@@ -496,7 +534,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+          paddingBottom: insets.bottom + ResponsiveSize.padding(100),
           flexGrow: filteredConversations.length === 0 ? 1 : undefined,
         }}
         ListEmptyComponent={
@@ -517,7 +555,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
                   styles.emptyButton,
                   { backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60" },
                 ]}
-                onPress={onNewMessage}
+                onPress={() => setShowNewMessageModal(true)}
               >
                 <Feather
                   name="edit"
@@ -554,6 +592,17 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
           conversationName={selectedConversation.name}
         />
       )}
+
+      {/* New Message Modal - Using our modern SaaS-style modal */}
+      <MessageContactModal
+        visible={showNewMessageModal}
+        onClose={() => setShowNewMessageModal(false)}
+        isDarkMode={isDarkMode}
+        contacts={MOCK_CONVERSATIONS}
+        onSelectContact={handleSelectContact}
+        recentContacts={MOCK_CONVERSATIONS.slice(0, 3)} // Just showing a few recent contacts for demo
+        frequentContacts={MOCK_CONVERSATIONS.filter((c) => c.isFavorite)} // Using favorites as frequent contacts for demo
+      />
     </DarkModeWrapper>
   );
 };
