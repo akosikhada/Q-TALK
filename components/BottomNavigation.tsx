@@ -2,6 +2,7 @@ import React from "react";
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { DarkModeText, ResponsiveSize } from "./StyledComponents";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type NavigationTab = {
   name: string;
@@ -29,6 +30,8 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
   isDarkMode,
   tabs = defaultTabs,
 }) => {
+  const insets = useSafeAreaInsets();
+
   return (
     <View
       style={[
@@ -36,6 +39,13 @@ const BottomNavigation: React.FC<BottomNavigationProps> = ({
         {
           backgroundColor: isDarkMode ? "#1A202C" : "#FFFFFF",
           borderTopColor: isDarkMode ? "#2D3748" : "#E5E7EB",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -3 },
+          shadowOpacity: isDarkMode ? 0.3 : 0.15,
+          shadowRadius: 5,
+          elevation: 8,
+          paddingBottom:
+            insets.bottom > 0 ? insets.bottom : ResponsiveSize.padding(8),
         },
       ]}
     >
@@ -88,6 +98,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    zIndex: 1000,
   },
   navItem: {
     alignItems: "center",
