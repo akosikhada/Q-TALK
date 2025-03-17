@@ -13,6 +13,7 @@ import {
   BottomNavigation,
   SettingItem,
 } from "../components";
+import { ThemePreferencesModal } from "../components/modals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
@@ -26,7 +27,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onLogout,
   navigation,
 }) => {
-  const { isDarkMode, toggleTheme } = useTheme();
+  const { isDarkMode, themePreference, setThemePreference } = useTheme();
+  const [showThemeModal, setShowThemeModal] = useState(false);
   const insets = useSafeAreaInsets();
 
   const navigateToTab = (tabName: string) => {
@@ -46,6 +48,19 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       if (rootNavigation) {
         rootNavigation.navigate(screenName);
       }
+    }
+  };
+
+  const getThemeValueText = () => {
+    switch (themePreference) {
+      case "light":
+        return "Light Mode";
+      case "dark":
+        return "Dark Mode";
+      case "system":
+        return "System Default";
+      default:
+        return "System Default";
     }
   };
 
@@ -71,7 +86,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+          paddingBottom: insets.bottom + ResponsiveSize.padding(100),
         }}
         showsVerticalScrollIndicator={false}
       >
@@ -151,11 +166,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           />
           <SettingItem
             icon="moon"
-            title="Dark Mode"
-            hasToggle={true}
-            value={isDarkMode}
-            onPress={toggleTheme}
-            hasChevron={false}
+            title="Theme Preferences"
+            value={getThemeValueText()}
+            onPress={() => setShowThemeModal(true)}
             isDarkMode={isDarkMode}
           />
         </View>
@@ -214,6 +227,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </View>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Theme Preferences Modal */}
+      <ThemePreferencesModal
+        visible={showThemeModal}
+        onClose={() => setShowThemeModal(false)}
+        onSelectTheme={(theme) => setThemePreference(theme)}
+        currentTheme={themePreference}
+        isDarkMode={isDarkMode}
+      />
 
       <BottomNavigation
         activeTab="settings"
