@@ -24,17 +24,32 @@ import {
   BottomNavigation,
   Avatar,
 } from "../components";
+import { NewContactModal } from "../components/modals";
 
-// Define the contact type
-type Contact = {
+// Define Contact type locally to avoid import errors
+interface Contact {
   id: string;
   name: string;
-  avatar: string;
-  isOnline?: boolean;
+  avatar?: string;
   phone?: string;
   email?: string;
+  isOnline?: boolean;
   isFavorite?: boolean;
-};
+}
+
+// Define ContactsScreenProps type locally
+interface ContactsScreenProps {
+  onSelectContact: (id: string) => void;
+  navigation?: any;
+}
+
+// Define ContactFormData type locally
+interface ContactFormData {
+  name: string;
+  phone: string;
+  email: string;
+  profilePicture?: string;
+}
 
 // Define contact group type
 type ContactGroup = {
@@ -180,11 +195,6 @@ const CONTACT_GROUPS: ContactGroup[] = [
   },
 ];
 
-type ContactsScreenProps = {
-  onSelectContact: (contactId: string) => void;
-  navigation?: any;
-};
-
 const ContactsScreen: React.FC<ContactsScreenProps> = ({
   onSelectContact,
   navigation,
@@ -192,6 +202,7 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [showAlphabetIndex, setShowAlphabetIndex] = useState(false);
+  const [showNewContactModal, setShowNewContactModal] = useState(false);
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
   const sectionListRef = useRef<SectionList>(null);
@@ -347,11 +358,7 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
     </TouchableOpacity>
   );
 
-  const renderSectionHeader = ({
-    section,
-  }: {
-    section: SectionListData<Contact>;
-  }) => (
+  const renderSectionHeader = ({ section }: any) => (
     <View
       style={[
         styles.sectionHeader,
@@ -467,6 +474,26 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
     );
   };
 
+  const handleSaveContact = (contactData: ContactFormData) => {
+    console.log("Saving new contact:", contactData);
+    // Here you would typically add the contact to your data store
+    // For now, we'll just close the modal
+    setShowNewContactModal(false);
+
+    // In a real app, you would add the contact to your data store
+    // and then refresh the contacts list
+    // For example:
+    // const newContact: Contact = {
+    //   id: Date.now().toString(),
+    //   name: contactData.name,
+    //   phone: contactData.phone,
+    //   email: contactData.email,
+    //   avatar: contactData.profilePicture,
+    //   isOnline: false,
+    // };
+    // addContact(newContact);
+  };
+
   return (
     <DarkModeWrapper>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
@@ -483,7 +510,11 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
       >
         <View style={styles.headerTop}>
           <Text style={styles.headerTitle}>Contacts</Text>
-          <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.newCallButton}
+            activeOpacity={0.7}
+            onPress={() => setShowNewContactModal(true)}
+          >
             <Feather
               name="user-plus"
               size={ResponsiveSize.font(22)}
@@ -531,7 +562,7 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
           renderSectionHeader={renderSectionHeader}
           stickySectionHeadersEnabled={true}
           contentContainerStyle={{
-            paddingBottom: insets.bottom + ResponsiveSize.padding(80),
+            paddingBottom: insets.bottom + ResponsiveSize.padding(100),
           }}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -564,6 +595,14 @@ const ContactsScreen: React.FC<ContactsScreenProps> = ({
         activeTab="contacts"
         onTabPress={navigateToTab}
         isDarkMode={isDarkMode}
+      />
+
+      {/* New Contact Modal - Using the enhanced reusable component */}
+      <NewContactModal
+        visible={showNewContactModal}
+        onClose={() => setShowNewContactModal(false)}
+        isDarkMode={isDarkMode}
+        onSave={handleSaveContact}
       />
     </DarkModeWrapper>
   );
@@ -723,12 +762,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingTop: ResponsiveSize.padding(100),
+    paddingHorizontal: ResponsiveSize.padding(32),
   },
   emptyText: {
     fontSize: ResponsiveSize.font(16),
     marginTop: ResponsiveSize.padding(16),
     textAlign: "center",
-    paddingHorizontal: ResponsiveSize.padding(32),
   },
   filterTabsScroll: {
     width: "100%",
