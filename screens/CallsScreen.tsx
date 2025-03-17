@@ -13,17 +13,31 @@ import {
   Avatar,
   BottomNavigation,
 } from "../components";
+import { CallContactModal } from "../components/modals";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { Call, CallsScreenProps } from "../types/calls";
 import { MOCK_CALLS } from "../utils/mockCalls";
 
+/**
+ * CallsScreen Component
+ *
+ * Displays a list of call history organized by date sections
+ * with functionality to search calls and initiate new calls.
+ */
 const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
+  // =========================================================================
+  // State and Hooks
+  // =========================================================================
   const [searchQuery, setSearchQuery] = useState("");
+  const [showNewCallModal, setShowNewCallModal] = useState(false);
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
 
+  // =========================================================================
+  // Helper Functions
+  // =========================================================================
   const formatTime = (date: Date) => {
     return date.toLocaleString("en-US", {
       hour: "numeric",
@@ -50,6 +64,52 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     return formatDate(date);
   };
 
+  const navigateToTab = (tabName: string) => {
+    if (navigation) {
+      // Navigate to the tab screen using the parent navigator
+      const rootNavigation = navigation.getParent();
+      if (rootNavigation) {
+        rootNavigation.navigate("TabNavigator", { screen: tabName });
+      }
+    }
+  };
+
+  const handleVoiceCall = (contact: any) => {
+    setShowNewCallModal(false);
+    // Handle initiating a voice call
+    console.log("Voice calling:", contact.name);
+  };
+
+  const handleVideoCall = (contact: any) => {
+    setShowNewCallModal(false);
+    // Handle initiating a video call
+    console.log("Video calling:", contact.name);
+  };
+
+  // Handle call item press - for the entire contact card
+  const handleCallItemPress = (item: Call) => {
+    console.log("Call item pressed:", item.name);
+    // You could show call details or call history for this contact
+  };
+
+  // Handle direct voice call button press
+  const handleDirectVoiceCall = (item: Call, event: any) => {
+    // Stop propagation to prevent the parent TouchableOpacity from triggering
+    event.stopPropagation();
+    console.log("Direct voice call to:", item.name);
+  };
+
+  // Handle direct video call button press
+  const handleDirectVideoCall = (item: Call, event: any) => {
+    // Stop propagation to prevent the parent TouchableOpacity from triggering
+    event.stopPropagation();
+    console.log("Direct video call to:", item.name);
+  };
+
+  // =========================================================================
+  // Data Processing
+  // =========================================================================
+  // Filter calls based on search query
   const filteredCalls = MOCK_CALLS.filter((call) =>
     call.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -66,6 +126,12 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     return groups;
   }, [] as { title: string; data: Call[] }[]);
 
+  // =========================================================================
+  // UI Helper Components
+  // =========================================================================
+  /**
+   * Renders the appropriate icon for different call types
+   */
   const getCallIcon = (type: string) => {
     switch (type) {
       case "incoming":
@@ -149,16 +215,12 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     }
   };
 
-  const navigateToTab = (tabName: string) => {
-    if (navigation) {
-      // Navigate to the tab screen using the parent navigator
-      const rootNavigation = navigation.getParent();
-      if (rootNavigation) {
-        rootNavigation.navigate("TabNavigator", { screen: tabName });
-      }
-    }
-  };
-
+  // =========================================================================
+  // Render Functions
+  // =========================================================================
+  /**
+   * Renders an individual call item
+   */
   const renderItem = ({ item }: { item: Call }) => (
     <TouchableOpacity
       style={[
@@ -168,6 +230,7 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
         },
       ]}
       activeOpacity={0.7}
+      onPress={() => handleCallItemPress(item)}
     >
       <View style={styles.callInfo}>
         <Avatar
@@ -203,6 +266,7 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
             },
           ]}
           activeOpacity={0.8}
+          onPress={(event) => handleDirectVoiceCall(item, event)}
         >
           <Feather
             name="phone"
@@ -218,6 +282,7 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
             },
           ]}
           activeOpacity={0.8}
+          onPress={(event) => handleDirectVideoCall(item, event)}
         >
           <Feather
             name="video"
@@ -229,6 +294,9 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  /**
+   * Renders the section header for each date group
+   */
   const renderSectionHeader = ({
     section: { title },
   }: {
@@ -246,6 +314,9 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     </View>
   );
 
+  /**
+   * Renders the empty state when no calls are found
+   */
   const renderEmptyList = () => (
     <View style={styles.emptyContainer}>
       <View
@@ -269,68 +340,82 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
     </View>
   );
 
+  /**
+   * Renders the header with title and new call button
+   */
+  const renderHeader = () => (
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60",
+          paddingTop: insets.top + ResponsiveSize.padding(10),
+        },
+      ]}
+    >
+      <View style={styles.headerTop}>
+        <Text style={styles.headerTitle}>Calls</Text>
+        <TouchableOpacity
+          style={styles.newCallButton}
+          activeOpacity={0.7}
+          onPress={() => setShowNewCallModal(true)}
+        >
+          <Feather
+            name="phone-call"
+            size={ResponsiveSize.font(22)}
+            color="white"
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <Feather
+          name="search"
+          size={ResponsiveSize.font(18)}
+          color="rgba(255, 255, 255, 0.6)"
+        />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search calls"
+          placeholderTextColor="rgba(255, 255, 255, 0.6)"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity
+            onPress={() => setSearchQuery("")}
+            style={styles.clearButton}
+          >
+            <Feather
+              name="x"
+              size={ResponsiveSize.font(18)}
+              color="rgba(255, 255, 255, 0.6)"
+            />
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+
+  // =========================================================================
+  // Main Render
+  // =========================================================================
   return (
     <DarkModeWrapper>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
 
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          {
-            backgroundColor: isDarkMode ? "#25BE80" : "#1A8D60",
-            paddingTop: insets.top + ResponsiveSize.padding(10),
-          },
-        ]}
-      >
-        <View style={styles.headerTop}>
-          <Text style={styles.headerTitle}>Calls</Text>
-          <TouchableOpacity style={styles.newCallButton} activeOpacity={0.7}>
-            <Feather
-              name="phone-call"
-              size={ResponsiveSize.font(22)}
-              color="white"
-            />
-          </TouchableOpacity>
-        </View>
+      {renderHeader()}
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <Feather
-            name="search"
-            size={ResponsiveSize.font(18)}
-            color="rgba(255, 255, 255, 0.6)"
-          />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search calls"
-            placeholderTextColor="rgba(255, 255, 255, 0.6)"
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity
-              onPress={() => setSearchQuery("")}
-              style={styles.clearButton}
-            >
-              <Feather
-                name="x"
-                size={ResponsiveSize.font(18)}
-                color="rgba(255, 255, 255, 0.6)"
-              />
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
+      {/* Call List */}
       <SectionList
         sections={groupedCalls}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         contentContainerStyle={{
-          paddingBottom: insets.bottom + ResponsiveSize.padding(80),
-          flexGrow: 1, // This ensures the empty component takes full height
+          paddingBottom: insets.bottom + ResponsiveSize.padding(100),
+          flexGrow: 1,
         }}
         style={styles.list}
         showsVerticalScrollIndicator={false}
@@ -338,16 +423,32 @@ const CallsScreen: React.FC<CallsScreenProps> = ({ navigation }) => {
         ListEmptyComponent={renderEmptyList}
       />
 
+      {/* Bottom Navigation */}
       <BottomNavigation
         activeTab="calls"
         onTabPress={navigateToTab}
         isDarkMode={isDarkMode}
       />
+
+      {/* New Call Modal - Using the enhanced SaaS-style modal */}
+      <CallContactModal
+        visible={showNewCallModal}
+        onClose={() => setShowNewCallModal(false)}
+        isDarkMode={isDarkMode}
+        contacts={MOCK_CALLS}
+        onVoiceCall={handleVoiceCall}
+        onVideoCall={handleVideoCall}
+        recentContacts={MOCK_CALLS.slice(0, 3)} // Just showing a few recent contacts for demo
+      />
     </DarkModeWrapper>
   );
 };
 
+// =========================================================================
+// Styles
+// =========================================================================
 const styles = StyleSheet.create({
+  // Header Styles
   header: {
     paddingHorizontal: ResponsiveSize.padding(16),
     paddingBottom: ResponsiveSize.padding(12),
@@ -379,6 +480,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+
+  // Search Styles
   searchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -396,6 +499,8 @@ const styles = StyleSheet.create({
   clearButton: {
     padding: ResponsiveSize.padding(4),
   },
+
+  // List Styles
   list: {
     flex: 1,
   },
@@ -408,6 +513,8 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     textTransform: "uppercase",
   },
+
+  // Call Item Styles
   callItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -472,6 +579,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
   },
+
+  // Empty State Styles
   emptyContainer: {
     flex: 1,
     alignItems: "center",
