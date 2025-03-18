@@ -21,6 +21,10 @@ import {
 } from "../components/StyledComponents";
 import { StyleSheet } from "react-native";
 import { useAlert } from "../contexts/AlertContext";
+import { useNavigation } from '@react-navigation/native';
+
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getDatabase, ref, set } from "firebase/database"; 
 
 type SignUpScreenProps = {
   onAuthenticate: (phoneOrEmail: string, password: string) => void;
@@ -29,7 +33,7 @@ type SignUpScreenProps = {
 
 const SignUpScreen: React.FC<SignUpScreenProps> = ({
   onAuthenticate,
-  navigation,
+  navigation
 }) => {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -45,6 +49,9 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
   const insets = useSafeAreaInsets();
   const { isDarkMode } = useTheme();
   const { showErrorAlert, showWarningAlert } = useAlert();
+
+  const [isLoading, setIsLoading] = useState(false);
+  
 
   // Password validation and strength calculation
   useEffect(() => {
@@ -105,7 +112,8 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+
     // Validation for sign up
     if (!fullName.trim()) {
       showErrorAlert("Missing Information", "Please enter your full name");
@@ -144,9 +152,45 @@ const SignUpScreen: React.FC<SignUpScreenProps> = ({
       return;
     }
 
-    // Call the onAuthenticate function with the appropriate values
-    onAuthenticate(email || phoneNumber, password);
+    setIsLoading(true);
+    try {
+      // Step 1: Create user in Firebase
+      const auth = getAuth();
+      const db = getDatabase();
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      // Step 2: Store user data in Firebase
+      await set(ref(db, "users/" + user.uid), { 
+        fullName, 
+        email, 
+        phoneNumber: phoneNumber || "",
+        uid: user.uid,
+        createdAt: Date.now()
+      });
+      
+      // Step 3: Send OTP to user's email
+      const response = await fetch("http://192.168.254.103:5000/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to send verification code");
+      }
+      
+      // Inside your handleSubmit function in SignUpScreen
+      onAuthenticate(email, password);
+      
+    } catch (error:any) {
+      showErrorAlert("Sign Up Failed", error.message);
+    } finally {
+      setIsLoading(false);
+    }
+
   };
+  
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
   const toggleShowConfirmPassword = () =>

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from "react";
 import {
   View,
   TextInput,
@@ -11,19 +11,36 @@ import { ResponsiveSize } from "./StyledComponents";
 
 interface OTPInputProps {
   length: number;
-  onComplete: (otp: string) => void;
+  onComplete?: (otp: string) => void;
   autoFocus?: boolean;
   isDarkMode: boolean;
+  value?: string;
+  onChangeText?: (text: string) => void;
 }
 
-const OTPInput: React.FC<OTPInputProps> = ({
+const OTPInput = forwardRef<
+  { clear: () => void },
+  OTPInputProps
+>(({
   length = 6,
   onComplete,
   autoFocus = true,
   isDarkMode,
-}) => {
+  value,
+  onChangeText
+}, ref) => {
   const [otp, setOtp] = useState<string[]>(Array(length).fill(""));
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
+  // Add this to expose the clear method
+  useImperativeHandle(ref, () => ({
+    clear: () => {
+      setOtp(Array(length).fill(""));
+      if (inputRefs.current[0]) {
+        inputRefs.current[0]?.focus();
+      }
+    }
+  }));
 
   useEffect(() => {
     // Initialize refs array
@@ -40,10 +57,17 @@ const OTPInput: React.FC<OTPInputProps> = ({
   useEffect(() => {
     const otpValue = otp.join("");
     if (otpValue.length === length) {
-      onComplete(otpValue);
+      if (onChangeText) {
+        onChangeText(otpValue);
+      }
+      if (onComplete) {
+        onComplete(otpValue);
+      }
       Keyboard.dismiss();
+    } else if (onChangeText) {
+      onChangeText(otpValue);
     }
-  }, [otp, length, onComplete]);
+  }, [otp, length, onComplete, onChangeText]);
 
   const handleChange = (text: string, index: number) => {
     if (text.length > 1) {
@@ -123,7 +147,7 @@ const OTPInput: React.FC<OTPInputProps> = ({
         ))}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

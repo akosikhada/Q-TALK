@@ -8,7 +8,8 @@ import AuthNavigator from "./navigation/AuthNavigator";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AlertProvider } from "./contexts/AlertContext";
 
-// Ignore specific warnings that are related to third-party libraries
+import { auth, db, onAuthStateChanged, ref, get, signOut } from "./services/config";
+
 LogBox.ignoreLogs([
   "ViewPropTypes will be removed from React Native",
   "ColorPropType will be removed from React Native",
@@ -22,9 +23,36 @@ export default function App() {
     setIsAuthenticated(true);
   };
 
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setIsAuthenticated(false);
+    } catch (error:any) {
+      console.error("Logout Error:", error.message);
+    }
   };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userRef = ref(db, `users/${user.uid}`);
+        const snapshot = await get(userRef);
+  
+        if (snapshot.exists()) {
+          // Check if the user has completed email verification
+          const userData = snapshot.val();
+          // Only authenticate if emailVerified is true
+          setIsAuthenticated(userData.emailVerified === true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []);
 
   return (
     <ThemeProvider>
