@@ -100,7 +100,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             style={[
               styles.button,
               {
-                backgroundColor: "transparent",
+                backgroundColor: isDarkMode ? "transparent" : "white",
                 borderWidth: 2,
                 borderColor: isDarkMode ? "#25BE80" : "#1A8D60",
                 marginTop: ResponsiveSize.padding(16),
@@ -112,7 +112,10 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             <Text
               style={[
                 styles.buttonText,
-                { color: isDarkMode ? "#25BE80" : "#1A8D60" },
+                {
+                  color: isDarkMode ? "#25BE80" : "#1A8D60",
+                  fontWeight: "700",
+                },
               ]}
             >
               Create Account
@@ -143,8 +146,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
             style={[
               styles.socialButton,
               {
-                backgroundColor: isDarkMode ? "#2D3748" : "#F5F7FA",
+                backgroundColor: isDarkMode ? "#2D3748" : "white",
                 borderColor: isDarkMode ? "#3D4A5C" : "#D8DEE6",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 3,
               },
             ]}
             onPress={handleGoogleButtonPress}
@@ -152,7 +160,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
           >
             <AntDesign
               name="google"
-              size={ResponsiveSize.width(24)}
+              size={ResponsiveSize.font(20)}
               color="#DB4437"
               style={styles.socialIcon}
             />
