@@ -139,16 +139,17 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       alignItems: "center",
       justifyContent: "center",
     },
-    logoContainer: {
+    welcomeContainer: {
       alignItems: "center",
       justifyContent: "center",
       marginBottom: ResponsiveSize.padding(24),
     },
-    logo: {
-      width: ResponsiveSize.width(160),
-      height: ResponsiveSize.width(160),
-      maxWidth: 180,
-      maxHeight: 180,
+    welcome: {
+      width: ResponsiveSize.width(250),
+      height: ResponsiveSize.width(250),
+      maxWidth: 250,
+      maxHeight: 250,
+      borderRadius: 24,
     },
     titleContainer: {
       alignItems: "center",
@@ -160,7 +161,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
     tagline: {
       textAlign: "center",
       maxWidth: ResponsiveSize.width(280),
-      marginBottom: ResponsiveSize.padding(12),
     },
     animatedContainer: {
       width: "100%",
@@ -240,11 +240,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({
       />
 
       <View style={styles.container}>
-        {/* App Logo */}
-        <View style={styles.logoContainer}>
+        {/* App welcome */}
+        <View style={styles.welcomeContainer}>
           <Image
-            source={require("../assets/SimpleLogo.png")}
-            style={styles.logo}
+            source={require("../assets/WelcomeDoodle.png")}
+            style={styles.welcome}
             resizeMode="contain"
           />
         </View>
