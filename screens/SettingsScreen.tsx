@@ -127,9 +127,10 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             isDarkMode={isDarkMode}
           />
           <SettingItem
-            icon="shield"
-            title="Security"
-            onPress={() => navigateToScreen("Security")}
+            icon="moon"
+            title="Theme Preferences"
+            value={getThemeValueText()}
+            onPress={() => setShowThemeModal(true)}
             isDarkMode={isDarkMode}
           />
           <SettingItem
@@ -162,13 +163,6 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
             title="Language"
             value="English"
             onPress={() => navigateToScreen("Language")}
-            isDarkMode={isDarkMode}
-          />
-          <SettingItem
-            icon="moon"
-            title="Theme Preferences"
-            value={getThemeValueText()}
-            onPress={() => setShowThemeModal(true)}
             isDarkMode={isDarkMode}
           />
         </View>
