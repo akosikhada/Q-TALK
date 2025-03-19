@@ -20,6 +20,9 @@ import CallsScreen from "../screens/CallsScreen";
 import PrivacyScreen from "../screens/PrivacyScreen";
 import ProfileScreen from "../screens/ProfileScreen";
 
+import { db } from "../services/config"; 
+import { ref, update } from "firebase/database";
+
 // Mock data for contacts
 const MOCK_CONTACTS = [
   { id: "1", name: "Sarah Parker" },
@@ -105,16 +108,20 @@ const TabNavigator: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
 
 // Wrapper for MessagesScreen to handle navigation
 const MessagesScreenWrapper = ({ navigation }: any) => {
-  const handleSelectConversation = (conversationId: string) => {
-    const contact = MOCK_CONTACTS.find((c) => c.id === conversationId);
-    if (contact) {
-      const rootNavigation = navigation.getParent();
-      if (rootNavigation) {
-        rootNavigation.navigate("Chat", {
-          conversationId,
-          contactName: contact.name,
-        });
-      }
+  const handleSelectConversation = (conversationId: string, contactName: string) => {
+    const rootNavigation = navigation.getParent();
+    
+    if (rootNavigation) {
+      // Navigate to chat screen
+      rootNavigation.navigate("Chat", { conversationId, contactName });
+  
+      // Reset unread count in Firebase
+      const conversationRef = ref(db, `conversations/${conversationId}`);
+      update(conversationRef, { unread: 0 })
+  .then(() => {
+    console.log("Unread count reset.");
+  })
+  .catch(error => console.error("Failed to reset unread count:", error));
     }
   };
 
@@ -127,12 +134,13 @@ const MessagesScreenWrapper = ({ navigation }: any) => {
 
   return (
     <MessagesScreen
-      onSelectConversation={handleSelectConversation}
+      onSelectConversation={handleSelectConversation} // Pass the function
       onNewMessage={handleNewMessage}
       navigation={navigation}
     />
   );
 };
+
 
 // Wrapper for ContactsScreen to handle navigation
 const ContactsScreenWrapper = ({ navigation }: any) => {

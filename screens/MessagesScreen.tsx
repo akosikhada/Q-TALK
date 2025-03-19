@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
 import { FlatList, ListRenderItemInfo, StyleSheet } from "react-native";
 import {
@@ -24,14 +24,16 @@ import { useAlert } from "../contexts/AlertContext";
 import { Conversation, MessagesScreenProps } from "../types/messages";
 import { MOCK_CONVERSATIONS } from "../utils/mockMessages";
 
+import { ref, onValue, set, remove  } from "firebase/database";
+import { db } from "../services/config";  
+
 const MessagesScreen: React.FC<MessagesScreenProps> = ({
   onSelectConversation,
   onNewMessage,
   navigation,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [conversations, setConversations] =
-    useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
@@ -40,7 +42,19 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
   const { isDarkMode } = useTheme();
   const { showSuccessAlert, showInfoAlert, showConfirmAlert } = useAlert();
 
-  const formatMessageTime = (date: Date) => {
+  const formatMessageTime = (timestamp: any) => {
+    if (!timestamp) return "Unknown time"; 
+    
+    let numericTimestamp = Number(timestamp); 
+
+    if (numericTimestamp < 1e12) {
+        numericTimestamp *= 1000;
+    }
+
+    const date = new Date(numericTimestamp);
+
+    if (isNaN(date.getTime())) return "Unknown time"; 
+
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / 60000);
     const diffInHours = Math.floor(diffInMinutes / 60);
@@ -51,18 +65,36 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
     if (diffInHours < 24) return `${diffInHours}h ago`;
     if (diffInDays === 1) return "Yesterday";
     if (diffInDays < 7) {
-      return date.toLocaleDateString("en-US", { weekday: "long" });
+        return date.toLocaleDateString("en-US", { weekday: "long" });
     }
     return date.toLocaleDateString("en-US", {
-      month: "2-digit",
-      day: "2-digit",
-      year: "2-digit",
+        month: "2-digit",
+        day: "2-digit",
+        year: "2-digit",
     });
-  };
+};
 
   const filteredConversations = conversations.filter((conversation) =>
     conversation.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  useEffect(() => {
+    const conversationsRef = ref(db, "conversations");
+    const unsubscribe = onValue(conversationsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const fetchedConversations = Object.keys(data).map((key) => ({
+          id: key,
+          ...data[key],
+        }));
+        setConversations(fetchedConversations);
+      } else {
+        setConversations([]);
+      }
+    });
+  
+    return () => unsubscribe();
+  }, []); // ✅ Keep an empty dependency array
 
   const handleLongPress = (conversation: Conversation) => {
     setSelectedConversation(conversation);
@@ -146,28 +178,38 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
   const handleDelete = () => {
     if (selectedConversation) {
       setModalVisible(false);
-
-      // Use confirm alert with callbacks
+  
+      // Show confirmation alert before deleting
       showConfirmAlert(
         "Delete Conversation",
         `Are you sure you want to delete your conversation with ${selectedConversation.name}?`,
         () => {
-          // Remove the conversation from the list
-          const updatedConversations = conversations.filter(
-            (conv) => conv.id !== selectedConversation.id
-          );
-          setConversations(updatedConversations);
-
-          showSuccessAlert(
-            "Deleted",
-            `Conversation with ${selectedConversation.name} has been deleted.`
-          );
+          const conversationRef = ref(db, `conversations/${selectedConversation.id}`);
+  
+          // ✅ Remove conversation from Firebase
+          remove(conversationRef)
+            .then(() => {
+              console.log("Conversation deleted successfully");
+  
+              // ✅ Update UI by filtering out the deleted conversation
+              setConversations((prev) =>
+                prev.filter((conv) => conv.id !== selectedConversation.id)
+              );
+  
+              showSuccessAlert(
+                "Deleted",
+                `Conversation with ${selectedConversation.name} has been deleted.`
+              );
+            })
+            .catch((error) => {
+              console.error("Error deleting conversation:", error);
+            });
         }
       );
     }
   };
 
-  const handleSelectContact = (contact: any) => {
+  const  handleSelectContact = (contact: any) => {
     // In a real app, you would create a new conversation or navigate to an existing one
     showSuccessAlert(
       "New Conversation",
@@ -183,7 +225,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
       );
 
       if (existingConversation) {
-        onSelectConversation(existingConversation.id);
+        onSelectConversation(existingConversation.id, existingConversation.name);
       } else {
         // In a real app, you would create a new conversation here
         console.log("Would create new conversation with", contact.name);
@@ -203,7 +245,7 @@ const MessagesScreen: React.FC<MessagesScreenProps> = ({
         styles.conversationItem,
         { borderBottomColor: isDarkMode ? "#2D3748" : "#F5F7FA" },
       ]}
-      onPress={() => onSelectConversation(item.id)}
+      onPress={() => onSelectConversation(item.id, item.name)}
       onLongPress={() => handleLongPress(item)}
       activeOpacity={0.7}
       delayLongPress={300}

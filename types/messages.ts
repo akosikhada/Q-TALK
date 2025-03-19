@@ -10,7 +10,7 @@ export type Conversation = {
 };
 
 export type MessagesScreenProps = {
-  onSelectConversation: (conversationId: string) => void;
+  onSelectConversation: (conversationId: string, conversationName: string) => void;
   onNewMessage: () => void;
   navigation?: any;
 };

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Image, ScrollView } from "react-native";
+import { StyleSheet, Image, ScrollView, ActivityIndicator } from "react-native";
 import {
   View,
   TouchableOpacity,
@@ -15,6 +15,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
+import { auth } from "../services/config";
+import { subscribeToData } from "../services/DatabaseService";
+
+type UserData = {
+  name: string;
+  email: string;
+  photoURL: string;
+  status: string;
+  phone?: string;
+  about?: string;
+};
+
 type ProfileScreenProps = {
   navigation?: any;
 };
@@ -23,9 +35,71 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
   const { isDarkMode } = useTheme();
   const insets = useSafeAreaInsets();
 
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let unsubscribe: () => void;
+
+    const fetchUserData = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          // Subscribe to real-time updates for the user data
+          unsubscribe = subscribeToData(`users/${currentUser.uid}`, (data) => {
+            if (data) {
+              setUserData({
+                name: data.fullName || "User",
+                email: data.email || currentUser.email || "",
+                photoURL: data.photoURL || currentUser.photoURL || "",
+                status: data.status || "Available",
+                phone: data.phoneNumber || "+1 (555) 123-4567",
+                about: data.about || "Hey there! I'm using Q-TALK",
+              });
+            } else {
+              // If no data exists yet, use auth data
+              setUserData({
+                name: currentUser.displayName || "User",
+                email: currentUser.email || "",
+                photoURL: currentUser.photoURL || "",
+                status: "Available",
+                phone: "+1 (555) 123-4567",
+                about: "Hey there! I'm using Q-TALK",
+              });
+            }
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error in fetchUserData:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    // Clean up the subscription when the component unmounts
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
+
   return (
     <DarkModeWrapper>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
+
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator
+            size="large"
+            color={isDarkMode ? "#25BE80" : "#1A8D60"}
+          />
+        </View>
+      )}
 
       {/* Header */}
       <View
@@ -61,7 +135,6 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </View>
-
       <ScrollView
         style={styles.container}
         contentContainerStyle={{
@@ -73,7 +146,11 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
         <View style={styles.profileHeader}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/32.jpg" }}
+              source={{
+                uri:
+                  userData?.photoURL ||
+                  "https://randomuser.me/api/portraits/men/32.jpg",
+              }}
               style={styles.profileImage}
             />
             <TouchableOpacity
@@ -94,13 +171,15 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.profileInfo}>
-            <DarkModeText style={styles.profileName}>John Doe</DarkModeText>
+            <DarkModeText style={styles.profileName}>
+              {userData?.name || "User"}
+            </DarkModeText>
             <View style={styles.statusContainer}>
               <View
                 style={[styles.statusIndicator, { backgroundColor: "#25BE80" }]}
               />
               <DarkModeSecondaryText style={styles.profileStatus}>
-                Available
+                {userData?.status || "Available"}
               </DarkModeSecondaryText>
             </View>
           </View>
@@ -177,7 +256,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             icon="phone"
             iconColor={isDarkMode ? "#64B5F6" : "#2196F3"}
             title="Phone Number"
-            value="+1 (555) 123-4567"
+            value={userData?.phone || "+1 (555) 123-4567"}
             onPress={() => {}}
             hasChevron={false}
             isDarkMode={isDarkMode}
@@ -186,7 +265,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             icon="mail"
             iconColor={isDarkMode ? "#25BE80" : "#1A8D60"}
             title="Email"
-            value="john.doe@example.com"
+            value={userData?.email || "john.doe@example.com"}
             onPress={() => {}}
             hasChevron={false}
             isDarkMode={isDarkMode}
@@ -195,7 +274,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
             icon="info"
             iconColor={isDarkMode ? "#FFD54F" : "#FFC107"}
             title="About"
-            value="Hey there! I'm using Q-TALK"
+            value={userData?.about || "Hey there! I'm using Q-TALK"}
             onPress={() => {}}
             isDarkMode={isDarkMode}
           />
@@ -249,6 +328,18 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.1)',
+    zIndex: 999,
+  },
   container: {
     flex: 1,
   },

@@ -37,36 +37,13 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthenticated }) => {
     navigation.navigate("SignUp");
   }, []);
 
-  const handleSignIn = useCallback(
-    (phoneOrEmail: string, password: string, navigation: any) => {
-      setPhoneOrEmail(phoneOrEmail);
-      // In a real app, you would make an API call here
-      // For now, we'll just navigate to OTP screen
-      navigation.navigate("OTP", { phoneOrEmail });
-    },
-    []
-  );
-
-  const handleSignUp = useCallback(
-    (phoneOrEmail: string, password: string, navigation: any) => {
-      setPhoneOrEmail(phoneOrEmail);
-      // In a real app, you would make an API call here
-      // For now, we'll just navigate to OTP screen
-      navigation.navigate("OTP", { phoneOrEmail });
-    },
-    []
-  );
-
   const handleVerifyOTP = useCallback(
     (otp: string) => {
-      // In a real app, you would verify the OTP with an API call
-      // For now, we'll just complete the authentication
-      console.log("OTP verified:", otp);
+      // The OTP validation is now handled in our OTPScreen component
       onAuthenticated();
     },
     [onAuthenticated]
   );
-
   const handleResendOTP = useCallback(() => {
     // In a real app, you would make an API call to resend the OTP
     console.log("Resending OTP...");
@@ -94,23 +71,16 @@ const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onAuthenticated }) => {
       </Stack.Screen>
 
       <Stack.Screen name="SignIn">
-        {(props) => (
-          <SignInScreen
-            {...props}
-            onAuthenticate={(email, password) =>
-              handleSignIn(email, password, props.navigation)
-            }
-          />
-        )}
+        {(props) => <SignInScreen {...props} />}
       </Stack.Screen>
 
       <Stack.Screen name="SignUp">
         {(props) => (
           <SignUpScreen
             {...props}
-            onAuthenticate={(email, password) =>
-              handleSignUp(email, password, props.navigation)
-            }
+            onAuthenticate={(email, password) => {
+              props.navigation.navigate("OTP", { phoneOrEmail: email });
+            }}
           />
         )}
       </Stack.Screen>

@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect  } from "react";
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, ScrollView, Switch } from "react-native";
+import { StyleSheet, ScrollView, Switch, ActivityIndicator } from "react-native";
 import {
   View,
   Text,
@@ -18,6 +18,17 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 
+import { ref, onValue, off } from "firebase/database";
+import { db, auth } from "../services/config";
+import { subscribeToData } from "../services/DatabaseService";
+
+type UserData = {
+  name: string;
+  email: string;
+  photoURL: string;
+  status: string;
+};
+
 type SettingsScreenProps = {
   onLogout: () => void;
   navigation?: any;
@@ -30,6 +41,55 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const { isDarkMode, themePreference, setThemePreference } = useTheme();
   const [showThemeModal, setShowThemeModal] = useState(false);
   const insets = useSafeAreaInsets();
+  const [userData, setUserData] = useState<UserData | null>(null);
+  
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let unsubscribe: () => void;
+    
+    const fetchUserData = async () => {
+      try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          // Subscribe to real-time updates for the user data
+          unsubscribe = subscribeToData(`users/${currentUser.uid}`, (data) => {
+            if (data) {
+              setUserData({
+                name: data.fullName || "User",
+                email: data.email || currentUser.email || "",
+                photoURL: data.photoURL || currentUser.photoURL || "",
+                status: data.status || "Available"
+              });
+            } else {
+              // If no data exists yet, use auth data
+              setUserData({
+                name: currentUser.displayName || "User",
+                email: currentUser.email || "",
+                photoURL: currentUser.photoURL || "",
+                status: "Available"
+              });
+            }
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error in fetchUserData:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    // Clean up the subscription when the component unmounts
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, []);
 
   const navigateToTab = (tabName: string) => {
     if (navigation) {
@@ -92,28 +152,30 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
       >
         {/* Profile Section */}
         <TouchableOpacity
-          style={styles.profileSection}
-          onPress={() => navigateToScreen("Profile")}
-          activeOpacity={0.7}
-        >
-          <Avatar
-            uri="https://randomuser.me/api/portraits/men/32.jpg"
-            name="John Doe"
-            size={60}
-            backgroundColor={isDarkMode ? "#3D4A5C" : "#E8E8E8"}
-          />
-          <View style={styles.profileInfo}>
-            <DarkModeText style={styles.profileName}>John Doe</DarkModeText>
-            <DarkModeSecondaryText style={styles.profileStatus}>
-              Available
-            </DarkModeSecondaryText>
-          </View>
-          <Feather
-            name="chevron-right"
-            size={ResponsiveSize.font(20)}
-            color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
-          />
-        </TouchableOpacity>
+        style={styles.profileSection}
+        onPress={() => navigateToScreen("Profile")}
+        activeOpacity={0.7}
+      >
+        <Avatar
+          uri={userData?.photoURL || "https://randomuser.me/api/portraits/men/32.jpg"}
+          name={userData?.name || "User"}
+          size={60}
+          backgroundColor={isDarkMode ? "#3D4A5C" : "#E8E8E8"}
+        />
+        <View style={styles.profileInfo}>
+          <DarkModeText style={styles.profileName}>
+            {userData?.name || "User"}
+          </DarkModeText>
+          <DarkModeSecondaryText style={styles.profileStatus}>
+            {userData?.status || "Available"}
+          </DarkModeSecondaryText>
+        </View>
+        <Feather
+          name="chevron-right"
+          size={ResponsiveSize.font(20)}
+          color={isDarkMode ? "#A0A0A0" : "#9AA5B4"}
+        />
+      </TouchableOpacity>
 
         {/* Account Section */}
         <View style={styles.section}>

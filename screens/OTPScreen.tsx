@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -9,13 +16,14 @@ import {
   DarkModeSecondaryText,
   DarkModeHeading,
   ResponsiveSize,
-  OTPInput,
 } from "../components";
+
+import OTPInput from "../components/OTPInput";
 import {
   ActivityIndicator,
   Animated,
   Easing,
-  StyleSheet,
+  StyleSheet, 
   Dimensions,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -23,12 +31,54 @@ import { Feather } from "@expo/vector-icons";
 import { useTheme } from "../contexts/ThemeContext";
 import { useAlert } from "../contexts/AlertContext";
 
+import { getDatabase, ref, get, set, remove } from "firebase/database";
+import { getAuth } from "firebase/auth";
+
 type OTPScreenProps = {
   phoneOrEmail: string;
   onVerify: (otp: string) => void;
   onResendOTP: () => void;
   navigation?: any;
 };
+
+const EnhancedOTPInput = forwardRef((props: any, ref) => {
+  const [otp, setOtp] = useState("");
+  const otpInputRef = useRef<any>(null);
+
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setOtp("");
+      // Clear the underlying OTPInput
+      if (otpInputRef.current && otpInputRef.current.clear) {
+        otpInputRef.current.clear();
+      }
+    },
+    getValue: () => otp,
+  }));
+
+  const handleOtpChange = (value: string) => {
+    setOtp(value);
+    if (props.onChangeText) {
+      props.onChangeText(value);
+    }
+  };
+
+  const handleComplete = (value: string) => {
+    if (props.onComplete) {
+      props.onComplete(value);
+    }
+  };
+
+  return (
+    <OTPInput
+      ref={otpInputRef}
+      {...props}
+      value={otp}
+      onChangeText={handleOtpChange}
+      onComplete={handleComplete}
+    />
+  );
+});
 
 const OTPScreen: React.FC<OTPScreenProps> = ({
   phoneOrEmail,
@@ -45,6 +95,8 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
   const { showWarningAlert } = useAlert();
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
+  const otpInputRef = useRef<any>(null);
+  const [otpValue, setOtpValue] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -81,43 +133,142 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
     ]).start();
   }, [scaleAnim]);
 
+  const resetOtpInput = useCallback(() => {
+    setOtpValue("");
+    if (otpInputRef.current && otpInputRef.current.reset) {
+      otpInputRef.current.reset();
+    }
+  }, []);
+
   const handleVerify = useCallback(
-    (otpValue: string) => {
+    async (otpValue: string) => {
       if (otpValue.length === 6 && /^\d+$/.test(otpValue)) {
         setIsVerifying(true);
+        try {
+          const auth = getAuth();
+          const user = auth.currentUser;
 
-        // Simulate verification process
-        setTimeout(() => {
-          setIsVerifying(false);
+          if (!user) {
+            resetOtpInput(); // Reset OTP first
+            setIsVerifying(false);
+            showWarningAlert("Error", "User not found, please sign in again");
+            return;
+          }
+
+          const db = getDatabase();
+          const userRef = ref(db, `users/${user.uid}`);
+          const userSnapshot = await get(userRef);
+
+          if (!userSnapshot.exists()) {
+            resetOtpInput(); // Reset OTP first
+            setIsVerifying(false);
+            showWarningAlert("Error", "User data not found");
+            return;
+          }
+
+          const userData = userSnapshot.val();
+          const response = await fetch(
+            "http://192.168.254.103:5000/verify-otp",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email: userData.email, otp: otpValue }),
+            }
+          );
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || "Failed to verify OTP");
+          }
+
+          await set(ref(db, `users/${user.uid}/emailVerified`), true);
+
           setVerificationSuccess(true);
           animateVerification();
-
-          // Call onVerify after showing success animation for a moment
           setTimeout(() => {
-            // Fade out animation
             Animated.timing(opacityAnim, {
               toValue: 0,
               duration: 500,
               useNativeDriver: true,
               easing: Easing.ease,
             }).start(() => {
-              // Call onVerify after animation completes
               onVerify(otpValue);
             });
           }, 2000);
-        }, 1500);
+        } catch (error: any) {
+          resetOtpInput(); // Ensure OTP is cleared before showing error
+          setIsVerifying(false);
+          showWarningAlert("Verification Error", error.message);
+        }
       } else {
+        resetOtpInput(); // Ensure OTP is cleared first
         showWarningAlert("Invalid Code", "Please enter a valid 6-digit code");
       }
     },
-    [animateVerification, opacityAnim, onVerify, showWarningAlert]
+    [
+      animateVerification,
+      opacityAnim,
+      onVerify,
+      showWarningAlert,
+      resetOtpInput,
+    ]
   );
 
-  const handleResend = useCallback(() => {
-    onResendOTP();
-    setMinutes(2);
-    setSeconds(0);
-  }, [onResendOTP]);
+  const handleResend = useCallback(async () => {
+    try {
+      setIsVerifying(true);
+      const auth = getAuth();
+      const db = getDatabase();
+      const user = auth.currentUser;
+
+      if (!user) {
+        showWarningAlert("Error", "User not found, please sign in again");
+        setIsVerifying(false);
+        return;
+      }
+
+      // Get the user email
+      const userRef = ref(db, `users/${user.uid}`);
+      const userSnapshot = await get(userRef);
+
+      if (!userSnapshot.exists()) {
+        showWarningAlert("Error", "User data not found");
+        setIsVerifying(false);
+        return;
+      }
+
+      const userData = userSnapshot.val();
+
+      // Call backend to generate and send new OTP
+      const response = await fetch("http://192.168.254.103:5000/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: userData.email,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to resend OTP");
+      }
+
+      setMinutes(2);
+      setSeconds(0);
+
+      resetOtpInput();
+
+      // Show success message
+      showWarningAlert(
+        "OTP Sent",
+        "A new verification code has been sent to your email"
+      );
+      setIsVerifying(false);
+    } catch (error: any) {
+      showWarningAlert("Error", error.message);
+      setIsVerifying(false);
+    }
+  }, [showWarningAlert, resetOtpInput]);
 
   const formatTime = useCallback((min: number, sec: number) => {
     return `${min.toString().padStart(2, "0")}:${sec
@@ -266,10 +417,13 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
 
               {/* OTP Input */}
               <View style={styles.otpContainer}>
-                <OTPInput
+                <EnhancedOTPInput
+                  ref={otpInputRef}
                   length={6}
-                  onComplete={handleVerify}
                   isDarkMode={isDarkMode}
+                  value={otpValue}
+                  onChangeText={setOtpValue}
+                  onComplete={(value: string) => handleVerify(value)}
                 />
               </View>
 
@@ -300,7 +454,20 @@ const OTPScreen: React.FC<OTPScreenProps> = ({
                       : "#1A8D60",
                   },
                 ]}
-                onPress={() => {}}
+                onPress={() => {
+                  if (!isVerifying && otpInputRef.current) {
+                    // Check isVerifying state
+                    const currentOtp = otpInputRef.current.getValue();
+                    if (currentOtp && currentOtp.length === 6) {
+                      handleVerify(currentOtp);
+                    } else {
+                      showWarningAlert(
+                        "Invalid Code",
+                        "Please enter a valid 6-digit code"
+                      );
+                    }
+                  }
+                }}
                 disabled={isVerifying}
                 activeOpacity={0.8}
               >

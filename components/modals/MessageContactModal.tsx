@@ -53,27 +53,28 @@ const MessageContactModal: React.FC<MessageContactModalProps> = ({
   const searchInputRef = useRef<RNTextInput>(null);
 
   // Filter contacts based on search query and active tab
-  useEffect(() => {
-    let filtered = [...contacts];
+  // Update this useEffect
+useEffect(() => {
+  let filtered = [...contacts];
 
-    // Apply tab filter
-    if (activeTab === "recent") {
-      filtered = recentContacts;
-    } else if (activeTab === "frequent") {
-      filtered = frequentContacts;
-    } else if (activeTab === "groups") {
-      filtered = contacts.filter((contact) => contact.isGroup);
-    }
+  // Apply tab filter
+  if (activeTab === "recent") {
+    filtered = [...recentContacts]; // Create a new array to avoid reference issues
+  } else if (activeTab === "frequent") {
+    filtered = [...frequentContacts]; // Create a new array to avoid reference issues
+  } else if (activeTab === "groups") {
+    filtered = contacts.filter((contact) => contact.isGroup);
+  }
 
-    // Apply search filter
-    if (searchQuery.trim() !== "") {
-      filtered = filtered.filter((contact) =>
-        contact.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
+  // Apply search filter
+  if (searchQuery.trim() !== "") {
+    filtered = filtered.filter((contact) =>
+      contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }
 
-    setFilteredContacts(filtered);
-  }, [searchQuery, contacts, activeTab, recentContacts, frequentContacts]);
+  setFilteredContacts(filtered);
+}, [searchQuery, activeTab, contacts, recentContacts, frequentContacts]);
 
   // Animate modal when visibility changes
   useEffect(() => {

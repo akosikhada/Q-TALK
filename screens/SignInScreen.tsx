@@ -22,14 +22,15 @@ import {
 import { StyleSheet } from "react-native";
 import { useAlert } from "../contexts/AlertContext";
 
+import { auth, db, ref, get, signInWithEmailAndPassword } from "../services/config";
+import { setUserOnline } from "../services/DatabaseService";
+
 type SignInScreenProps = {
-  onAuthenticate: (phoneOrEmail: string, password: string) => void;
   navigation?: any;
 };
 
 const SignInScreen: React.FC<SignInScreenProps> = ({
-  onAuthenticate,
-  navigation,
+  navigation
 }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,8 +41,9 @@ const SignInScreen: React.FC<SignInScreenProps> = ({
 
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
-  const handleSubmit = () => {
-    // Validation for sign in
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async () => {
     if (!email.trim()) {
       showErrorAlert("Missing Information", "Please enter your email");
       return;
@@ -50,9 +52,31 @@ const SignInScreen: React.FC<SignInScreenProps> = ({
       showErrorAlert("Missing Information", "Please enter your password");
       return;
     }
-
-    // Call the onAuthenticate function with the appropriate values
-    onAuthenticate(email, password);
+    
+    setIsLoading(true);
+    try {
+      // Authenticate with Firebase
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+  
+      if (user) {
+        // Check if user exists in Firebase Realtime Database
+        const userRef = ref(db, `users/${user.uid}`);
+        const snapshot = await get(userRef);
+  
+        if (snapshot.exists()) {
+          await setUserOnline(user.uid);
+          console.log("User exists in database:", snapshot.val());
+        } else {
+          showErrorAlert("Authentication Failed", "User not found in the database.");
+        }
+      }
+    } catch (error:any) {
+      console.error("Login error:", error.message);
+      showErrorAlert("Login Failed", error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Function to handle Google Sign-In UI button press
