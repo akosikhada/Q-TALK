@@ -17,6 +17,16 @@ import {
   ResponsiveSize,
 } from "../components/StyledComponents";
 import { StyleSheet } from "react-native";
+import { useState } from "react";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+  isErrorWithCode,
+  isSuccessResponse
+} from '@react-native-google-signin/google-signin';
+import auth from "@react-native-firebase/auth";
+import database from "@react-native-firebase/database";
 
 type AuthScreenProps = {
   onSignIn: () => void;
@@ -33,11 +43,35 @@ const AuthScreen: React.FC<AuthScreenProps> = ({
   const { isDarkMode } = useTheme();
 
   // Function to handle Google Sign-In UI button press
-  const handleGoogleButtonPress = () => {
-    // This is just a placeholder for UI demonstration
-    console.log("Google button pressed");
-    // The actual implementation would be handled by the backend team
-  };
+  const handleGoogleButtonPress = async () => {
+      try {
+        console.log("Google button pressed"); // Logs when the button is pressed
+    
+        await GoogleSignin.hasPlayServices();
+        const response = await GoogleSignin.signIn();
+    
+        if (isSuccessResponse(response)) {
+          useState({ userInfo: response.data });
+        } else {
+          console.log("User canceled Google Sign-In");
+        }
+      } catch (error) {
+        if (isErrorWithCode(error)) {
+          switch (error.code) {
+            case statusCodes.IN_PROGRESS:
+              console.log("Sign-in is already in progress");
+              break;
+            case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+              console.log("Play Services not available or outdated");
+              break;
+            default:
+              console.log("An unknown error occurred:", error);
+          }
+        } else {
+          console.log("Non-Google sign-in error:", error);
+        }
+      }
+    };
 
   return (
     <DarkModeWrapper>

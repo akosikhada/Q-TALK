@@ -18,12 +18,23 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/SimpleLogo.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#ffffff",
+        "resizeMode": "contain"
       },
-      "package": "com.anonymous.qtalk"
+      "package": "com.qtalk.googlesignin",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/SimpleLogo.png"
+    },
+    "plugins": [
+      "@react-native-firebase/app",
+      "@react-native-google-signin/google-signin"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "59cad0b4-d04c-4718-ad6d-e73ede565e12"
+      }
     }
   }
 }

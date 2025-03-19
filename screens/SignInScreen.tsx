@@ -21,6 +21,16 @@ import {
 } from "../components/StyledComponents";
 import { StyleSheet } from "react-native";
 import { useAlert } from "../contexts/AlertContext";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+  isErrorWithCode,
+  isSuccessResponse
+} from '@react-native-google-signin/google-signin';
+import auth from "@react-native-firebase/auth";
+import database from "@react-native-firebase/database";
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 type SignInScreenProps = {
   onAuthenticate: (phoneOrEmail: string, password: string) => void;
@@ -56,11 +66,68 @@ const SignInScreen: React.FC<SignInScreenProps> = ({
   };
 
   // Function to handle Google Sign-In UI button press
-  const handleGoogleButtonPress = () => {
-    // This is just a placeholder for UI demonstration
-    console.log("Google button pressed");
-    // The actual implementation would be handled by the backend team
+  const handleGoogleButtonPress = async () => {
+    try {
+      console.log("Google button pressed");
+  
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      const { idToken } = response as { idToken?: string };
+  
+      if (!idToken) {
+        console.log("User canceled Google Sign-In");
+        return;
+      }
+  
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      const userCredential = await auth().signInWithCredential(googleCredential);
+      const user: FirebaseAuthTypes.User | null = userCredential.user;
+  
+      if (user) {
+        await checkAndAddUser(user);
+      }
+    } catch (error: unknown) {
+      if (typeof error === 'object' && error !== null && 'code' in error) {
+        switch ((error as { code: string }).code) {
+          case statusCodes.IN_PROGRESS:
+            console.log("Sign-in is already in progress");
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            console.log("Play Services not available or outdated");
+            break;
+          default:
+            console.log("An unknown error occurred:", error);
+        }
+      } else {
+        console.log("Non-Google sign-in error:", error);
+      }
+    }
   };
+  
+  const checkAndAddUser = async (user: FirebaseAuthTypes.User) => {
+    try {
+      const userRef = database().ref(`/users/${user.uid}`);
+      const snapshot = await userRef.once('value');
+  
+      if (!snapshot.exists()) {
+        await userRef.set({
+          userId: user.uid,
+          name: user.displayName,
+          email: user.email,
+          profilePicture: user.photoURL,
+          createdAt: database.ServerValue.TIMESTAMP,
+        });
+        console.log("User added to database");
+      } else {
+        console.log("User already exists in database");
+      }
+    } catch (error) {
+      console.error("Error adding user to database:", error);
+    }
+  };
+  
+  
+  
 
   return (
     <DarkModeWrapper>

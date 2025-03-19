@@ -7,6 +7,11 @@ import AppNavigator from "./navigation/AppNavigator";
 import AuthNavigator from "./navigation/AuthNavigator";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AlertProvider } from "./contexts/AlertContext";
+import {
+  GoogleSignin,
+  GoogleSigninButton,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
 // Ignore specific warnings that are related to third-party libraries
 LogBox.ignoreLogs([
@@ -25,6 +30,13 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
   };
+
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: "59274160536-t65ihd91olg4vo2c51qeq58umemehegs.apps.googleusercontent.com",
+    });
+  });
 
   return (
     <ThemeProvider>
